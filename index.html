@@ -1,0 +1,2018 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rechner">
+<title>Rechner</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Cpath d='M18 24h28M18 40h28' stroke='white' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#eef1f4;--surface:#fff;--surface2:#e6eaee;--text:#101828;--muted:#667085;
+  --accent:#0f766e;--accent-text:#fff;--accent-soft:#d5efec;
+  --key:#fff;--key-fn:#e3e8ed;--border:#d5dae0;--danger:#b42318;--shadow:0 1px 2px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1117;--surface:#161b22;--surface2:#212832;--text:#e8edf2;--muted:#8b97a5;
+    --accent:#2dd4bf;--accent-text:#042f2c;--accent-soft:#123a38;
+    --key:#1c232c;--key-fn:#28313c;--border:#2b3440;--danger:#f97066;--shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1117;--surface:#161b22;--surface2:#212832;--text:#e8edf2;--muted:#8b97a5;
+  --accent:#2dd4bf;--accent-text:#042f2c;--accent-soft:#123a38;
+  --key:#1c232c;--key-fn:#28313c;--border:#2b3440;--danger:#f97066;--shadow:none;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+.hidden{display:none!important}
+
+#app{height:100vh;height:100dvh;max-width:560px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);padding-top:env(safe-area-inset-top);position:relative}
+@media (min-width:600px){#app{box-shadow:0 0 0 1px var(--border)}}
+header{flex:0 0 auto;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 16px}
+header h1{font-size:19px;margin:0;font-weight:650}
+.hbtn{width:44px;height:44px;border:0;background:transparent;border-radius:12px;font-size:21px;color:var(--muted)}
+.hbtn:active{background:var(--surface2)}
+main{flex:1;min-height:0;position:relative}
+.panel{display:none;height:100%;flex-direction:column;padding:4px 12px 12px;overflow-y:auto;overflow-x:hidden}
+.panel.active{display:flex}
+
+/* Tab bar */
+#tabbar{flex:0 0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--surface);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+#tabbar button{min-width:0;border:0;background:transparent;min-height:56px;padding:6px 0 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:11px;font-weight:500;border-top:3px solid transparent}
+#tabbar button .ic{font-size:20px;line-height:1}
+#tabbar button.on{color:var(--accent);border-top-color:var(--accent)}
+
+/* Display */
+.disp{flex:0 0 auto;position:relative;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:12px 16px;margin-bottom:10px;min-height:118px;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:var(--shadow)}
+.disp .expr{color:var(--muted);font-size:18px;min-height:26px;overflow-x:auto;white-space:nowrap;text-align:right;scrollbar-width:none}
+.disp .expr::-webkit-scrollbar{display:none}
+.disp .res{font-size:48px;font-weight:600;text-align:right;white-space:nowrap;overflow-x:auto;scrollbar-width:none;font-variant-numeric:tabular-nums;cursor:pointer;line-height:1.15}
+.disp .res::-webkit-scrollbar{display:none}
+.disp .res.preview{opacity:.6}
+.disp .res.err{color:var(--danger);font-size:22px;font-weight:500}
+.disp .ind{position:absolute;left:14px;top:10px;font-size:12px;font-weight:600;color:var(--accent);display:flex;gap:8px}
+
+/* Keys */
+.keys{display:grid;gap:8px;min-height:0}
+#calc-keys{flex:1;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,1fr)}
+.sci-wrap{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
+.sci-wrap .keys{flex:1;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(4,1fr);gap:6px}
+.key{min-height:48px;border:0;border-radius:14px;background:var(--key);color:var(--text);font-size:clamp(18px,5.2vw,25px);font-weight:500;box-shadow:0 1px 0 var(--border),var(--shadow);user-select:none;-webkit-user-select:none;padding:0}
+.key:active{transform:scale(.95);filter:brightness(.94)}
+.key.fn{background:var(--key-fn)}
+.key.op{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.key.eq{background:var(--accent);color:var(--accent-text);font-weight:600}
+.key.sm{font-size:clamp(13px,3.9vw,18px)}
+.key.tog.on{background:var(--accent);color:var(--accent-text)}
+
+/* Forms */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.card h2{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 10px;text-transform:none}
+label.lbl{display:block;font-size:13px;color:var(--muted);margin:0 0 4px}
+.inp,select.inp{width:100%;min-height:48px;font-size:18px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-variant-numeric:tabular-nums}
+.inp:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row-flex{display:flex;gap:8px;align-items:center}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.chip{min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:16px}
+.chip.on{background:var(--accent);color:var(--accent-text);border-color:transparent;font-weight:600}
+.btn{min-height:52px;border:0;border-radius:14px;background:var(--accent);color:var(--accent-text);font-size:16px;font-weight:600;padding:0 14px}
+.btn:active{filter:brightness(.92)}
+.btn.alt{background:var(--key-fn);color:var(--text)}
+.btn.sm{min-height:44px;font-size:14px}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.btn.on{outline:3px solid var(--accent-soft);outline-offset:1px}
+.rows .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.rows .row:last-child{border-bottom:0}
+.rows .row span:first-child{color:var(--muted)}
+.rows .row b{font-variant-numeric:tabular-nums;font-weight:600;cursor:pointer}
+.rows .row.big b{font-size:26px;color:var(--accent)}
+.rows .row.big span:first-child{color:var(--text);font-weight:600}
+.hint{color:var(--muted);font-size:14px;margin:4px 0}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface2);border-radius:12px;padding:3px;margin-bottom:10px;gap:3px}
+.seg button{border:0;background:transparent;min-height:44px;border-radius:10px;font-weight:500;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow);font-weight:600}
+.fx-out{font-size:32px;font-weight:650;color:var(--accent);margin-top:12px;font-variant-numeric:tabular-nums;cursor:pointer;overflow-wrap:anywhere}
+.fx-swap{flex:0 0 48px;height:48px;border-radius:50%;border:1px solid var(--border);background:var(--surface);font-size:20px}
+.edit-row{display:grid;grid-template-columns:62px 1fr 44px;gap:8px;align-items:center;margin-bottom:8px}
+.edit-row .code{font-weight:600}
+.edit-row .code small{display:block;font-weight:400;color:var(--muted);font-size:11px;line-height:1.1}
+
+/* History */
+.h-list{list-style:none;margin:0;padding:0}
+.h-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 10px 10px 12px;margin-bottom:8px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.h-item:active{background:var(--surface2)}
+.badge{font-size:11px;font-weight:700;padding:3px 7px;border-radius:8px;background:var(--surface2);color:var(--muted);min-width:56px;text-align:center}
+.b-calc{background:var(--accent-soft);color:var(--accent)}
+.b-sci{background:#e7e5ff;color:#4338ca}
+.b-fx{background:#fff2d6;color:#a15c07}
+.b-price{background:#ffe3e3;color:#b42318}
+.b-extra{background:#e0f2fe;color:#075985}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .b-sci{background:#2a2766;color:#c7c4ff}:root:not([data-theme="light"]) .b-fx{background:#4a3410;color:#fcd38b}:root:not([data-theme="light"]) .b-price{background:#4a1d1a;color:#fda29b}:root:not([data-theme="light"]) .b-extra{background:#10384f;color:#8cd0f5}}
+:root[data-theme="dark"] .b-sci{background:#2a2766;color:#c7c4ff}:root[data-theme="dark"] .b-fx{background:#4a3410;color:#fcd38b}:root[data-theme="dark"] .b-price{background:#4a1d1a;color:#fda29b}:root[data-theme="dark"] .b-extra{background:#10384f;color:#8cd0f5}
+.h-main{min-width:0}
+.h-expr{color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h-res{font-size:19px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
+.h-side{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.h-time{font-size:11px;color:var(--muted)}
+.h-btns{display:flex}
+.h-btns button{width:40px;height:40px;border:0;background:transparent;border-radius:10px;font-size:18px;color:var(--muted)}
+.h-btns button:active{background:var(--surface2)}
+.empty{text-align:center;color:var(--muted);padding:40px 16px}
+
+/* Dialog + toast */
+dialog{border:0;border-radius:20px;padding:0;width:min(92vw,440px);background:var(--surface);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:18px}
+.dlg h2{margin:0 0 12px;font-size:20px}
+.set-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.set-row:last-of-type{border-bottom:0}
+.set-row .inp{width:120px;min-height:44px;font-size:16px}
+.set-row input[type=checkbox]{width:26px;height:26px;accent-color:var(--accent)}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(10px);background:#101828;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:88vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Helfer-Übersicht & Leiste anpassen */
+.grp{font-size:13px;font-weight:600;color:var(--muted);margin:14px 2px 8px;letter-spacing:.04em}
+.launch{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{position:relative;min-height:92px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:550;box-shadow:var(--shadow);padding:8px 4px}
+.tile:active{background:var(--surface2)}
+.tile .ic{font-size:28px;line-height:1}
+.tile.inbar{border-color:var(--accent)}
+.tile .pin{position:absolute;top:8px;left:10px;font-size:16px;font-weight:700;color:var(--accent)}
+.tile .grip{position:absolute;top:0;right:0;width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:20px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.editbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:2px 0 8px}
+.slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:10px}
+.slot{position:relative;min-height:72px;border:2px dashed var(--border);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--muted);touch-action:none;user-select:none;-webkit-user-select:none}
+.slot.full{border-style:solid;border-color:var(--accent);color:var(--text);background:var(--accent-soft);cursor:grab}
+.slot.over{border-color:var(--accent);background:var(--accent-soft);transform:scale(1.06)}
+.slot .ic{font-size:22px;line-height:1}
+.slot .x{position:absolute;top:-10px;right:-8px;width:30px;height:30px;border-radius:50%;border:0;background:var(--danger);color:#fff;font-size:13px;line-height:1;padding:0}
+.ghost{position:fixed;z-index:100;pointer-events:none;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:16px;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.92;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+/* Formular-Helfer, Timer, Zufall, Liste */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgrid .inp{min-width:0}
+.tdisp{font-size:clamp(44px,15vw,72px);font-weight:600;text-align:center;font-variant-numeric:tabular-nums;padding:14px 0 6px}
+.tdisp.done{color:var(--danger)}
+.btnrow{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;margin-top:12px}
+.rnd-out{font-size:38px;font-weight:650;text-align:center;color:var(--accent);padding:16px 8px;min-height:96px;overflow-wrap:anywhere;cursor:pointer;white-space:pre-line;display:flex;align-items:center;justify-content:center}
+.li{display:flex;align-items:center;gap:10px;min-height:52px;padding:2px 2px 2px 12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:8px}
+.li .t{flex:1;font-size:17px;cursor:pointer;overflow-wrap:anywhere;padding:10px 0}
+.li.done .t{text-decoration:line-through;color:var(--muted)}
+.li .box{width:28px;height:28px;border:2px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--accent-text);flex:0 0 auto;cursor:pointer}
+.li.done .box{background:var(--accent)}
+textarea.inp{min-height:260px;resize:vertical;line-height:1.45;font-size:17px}
+.lap{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+
+@media (orientation:landscape) and (max-height:520px){
+  header{height:38px}
+  #tabbar button{min-height:42px;flex-direction:row;gap:6px;font-size:12px}
+  #tabbar button .ic{font-size:16px}
+  .disp{min-height:74px;padding:6px 14px;margin-bottom:6px}
+  .disp .res{font-size:34px}
+  .disp .expr{font-size:15px;min-height:20px}
+  .sci-wrap{flex-direction:row;gap:8px}
+  .sci-wrap .keys{flex:1}
+  .key{min-height:40px}
+  .panel{padding-bottom:6px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1 id="title">Rechner</h1>
+    <div>
+      <button class="hbtn" id="btnTheme" aria-label="Hell/Dunkel wechseln">🌓</button>
+      <button class="hbtn" id="btnSettings" aria-label="Einstellungen">⚙</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Rechner -->
+    <section class="panel active" id="tab-calc">
+      <div class="disp"><div class="ind"><span id="calc-m"></span></div><div class="expr" id="calc-expr"></div><div class="res" id="calc-res" title="Tippen zum Kopieren">0</div></div>
+      <div class="keys" id="calc-keys"></div>
+    </section>
+
+    <!-- Wissenschaft -->
+    <section class="panel" id="tab-sci">
+      <div class="disp"><div class="ind"><span id="sci-ang">DEG</span><span id="sci-m"></span></div><div class="expr" id="sci-expr"></div><div class="res" id="sci-res" title="Tippen zum Kopieren">0</div></div>
+      <div class="sci-wrap"><div class="keys" id="sci-fn"></div><div class="keys" id="sci-num"></div></div>
+    </section>
+
+    <!-- Währung -->
+    <section class="panel" id="tab-fx">
+      <div class="card">
+        <label class="lbl" for="fx-amt">Betrag</label>
+        <input class="inp" id="fx-amt" inputmode="decimal" autocomplete="off" placeholder="0">
+        <div class="row-flex" style="margin-top:10px">
+          <select class="inp" id="fx-from" aria-label="Von Währung"></select>
+          <button class="fx-swap" id="fx-swap" aria-label="Währungen tauschen">⇄</button>
+          <select class="inp" id="fx-to" aria-label="In Währung"></select>
+        </div>
+        <div class="fx-out" id="fx-out" data-copy="">–</div>
+        <div class="hint" id="fx-rate"></div>
+        <div class="hint" id="fx-names"></div>
+      </div>
+      <div class="card">
+        <div class="hint" id="fx-status"></div>
+        <div class="grid2" style="margin-top:8px">
+          <button class="btn alt sm" id="fx-refresh">Kurse aktualisieren</button>
+          <button class="btn alt sm" id="fx-editbtn">Kurse bearbeiten</button>
+        </div>
+      </div>
+      <div class="card"><h2>Schnellübersicht</h2><div class="rows" id="fx-quick"></div></div>
+      <div class="card hidden" id="fx-edit">
+        <h2>Kurse bearbeiten (Wert für 1 EUR)</h2>
+        <p class="hint">Eigene Werte (z. B. für den Urlaub) bleiben erhalten, bis du sie mit ↺ zurücksetzt.</p>
+        <div id="fx-editrows"></div>
+        <h2 style="margin-top:14px">Eigene Währung hinzufügen</h2>
+        <div class="grid2">
+          <input class="inp" id="fx-newcode" placeholder="Kürzel, z. B. THB" maxlength="5" autocapitalize="characters" autocomplete="off">
+          <input class="inp" id="fx-newrate" inputmode="decimal" placeholder="Kurs pro 1 EUR" autocomplete="off">
+        </div>
+        <button class="btn sm" id="fx-add" style="margin-top:8px;width:100%">Hinzufügen</button>
+      </div>
+    </section>
+
+    <!-- Preis -->
+    <section class="panel" id="tab-price">
+      <div class="card">
+        <div class="grid2">
+          <div><label class="lbl" for="pr-amt">Preis (€)</label><input class="inp" id="pr-amt" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
+          <div><label class="lbl" for="pr-qty">Menge</label><input class="inp" id="pr-qty" inputmode="decimal" autocomplete="off" value="1"></div>
+        </div>
+        <label class="lbl" style="margin-top:10px">Steuersatz</label>
+        <div class="chips" id="pr-chips" style="margin:0"></div>
+        <div class="grid2" style="margin-top:12px">
+          <button class="btn" id="pr-plus">+ MwSt<br><small>Netto → Brutto</small></button>
+          <button class="btn" id="pr-minus">− MwSt<br><small>Brutto → Netto</small></button>
+        </div>
+      </div>
+      <div class="card"><div class="rows" id="pr-out"><div class="hint">Preis eingeben und oben eine Taste wählen.</div></div></div>
+      <div class="card">
+        <h2>Rabatt / Aufschlag</h2>
+        <div class="row-flex">
+          <input class="inp" id="pr-pct" inputmode="decimal" autocomplete="off" placeholder="Prozent, z. B. 20">
+          <button class="btn alt sm" id="pr-disc" style="flex:0 0 auto;min-width:92px">− Rabatt</button>
+          <button class="btn alt sm" id="pr-surch" style="flex:0 0 auto;min-width:92px">+ Aufschlag</button>
+        </div>
+        <div class="rows" id="pr-disc-out" style="margin-top:6px"></div>
+      </div>
+    </section>
+
+    <!-- Prozent, Trinkgeld, Einheiten -->
+    <section class="panel" id="tab-pct">
+      <div id="sub-pct">
+        <div class="card"><h2>Was sind X % von Y?</h2>
+          <div class="grid2"><input class="inp" id="p1-x" inputmode="decimal" placeholder="X (%)" autocomplete="off"><input class="inp" id="p1-y" inputmode="decimal" placeholder="Y" autocomplete="off"></div>
+          <div class="fx-out" id="p1-out" data-copy="">–</div></div>
+        <div class="card"><h2>A ist wie viel % von B?</h2>
+          <div class="grid2"><input class="inp" id="p2-a" inputmode="decimal" placeholder="A" autocomplete="off"><input class="inp" id="p2-b" inputmode="decimal" placeholder="B (Grundwert)" autocomplete="off"></div>
+          <div class="fx-out" id="p2-out" data-copy="">–</div></div>
+        <div class="card"><h2>Prozentuale Änderung von A nach B</h2>
+          <div class="grid2"><input class="inp" id="p3-a" inputmode="decimal" placeholder="A (alt)" autocomplete="off"><input class="inp" id="p3-b" inputmode="decimal" placeholder="B (neu)" autocomplete="off"></div>
+          <div class="fx-out" id="p3-out" data-copy="">–</div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="tab-tip">
+      <div id="sub-tip">
+        <div class="card">
+          <label class="lbl" for="t-amt">Rechnungsbetrag (€)</label>
+          <input class="inp" id="t-amt" inputmode="decimal" placeholder="0,00" autocomplete="off">
+          <label class="lbl" style="margin-top:10px">Trinkgeld</label>
+          <div class="chips" id="t-chips" style="margin:0 0 8px"></div>
+          <input class="inp" id="t-pct" inputmode="decimal" placeholder="eigener Satz in %" autocomplete="off">
+          <label class="lbl" style="margin-top:10px">Personen</label>
+          <div class="row-flex"><button class="btn alt sm" id="t-minus" style="width:56px">−</button><div id="t-n" style="flex:1;text-align:center;font-size:24px;font-weight:600">1</div><button class="btn alt sm" id="t-plus" style="width:56px">+</button></div>
+          <div class="row-flex" style="margin-top:12px"><input type="checkbox" id="t-round" style="width:24px;height:24px;accent-color:var(--accent)"><label for="t-round">Pro Person auf ganze Euro aufrunden</label></div>
+        </div>
+        <div class="card"><div class="rows" id="t-out"><div class="hint">Betrag eingeben.</div></div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="tab-unit">
+      <div id="sub-unit">
+        <div class="card">
+          <select class="inp" id="u-cat" aria-label="Kategorie"></select>
+          <input class="inp" id="u-val" inputmode="decimal" placeholder="Wert" autocomplete="off" style="margin-top:10px">
+          <div class="row-flex" style="margin-top:10px"><select class="inp" id="u-from" aria-label="Von"></select><button class="fx-swap" id="u-swap" aria-label="Tauschen">⇄</button><select class="inp" id="u-to" aria-label="Nach"></select></div>
+          <div class="fx-out" id="u-out" data-copy="">–</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Verlauf -->
+    <section class="panel" id="tab-hist">
+      <div class="row-flex" style="justify-content:space-between;margin:0 2px 8px">
+        <div class="hint" id="h-count"></div>
+        <button class="btn danger sm" id="h-clear">Alles löschen</button>
+      </div>
+      <ul class="h-list" id="h-list"></ul>
+      <p class="hint" id="h-tip">Tippen: Ergebnis in den Rechner übernehmen. Lange drücken oder ⧉: kopieren.</p>
+    </section>
+  </main>
+
+  <nav id="tabbar" aria-label="Bereiche"></nav>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg">
+    <h2>Einstellungen</h2>
+    <div class="set-row"><span>Design</span><select class="inp" id="s-theme"><option value="auto">Automatisch</option><option value="light">Hell</option><option value="dark">Dunkel</option></select></div>
+    <div class="set-row"><span>Vibration bei Tasten</span><input type="checkbox" id="s-vib"></div>
+    <div class="set-row"><span>Nachkommastellen (0–8)</span><input class="inp" id="s-dec" type="number" min="0" max="8" step="1" inputmode="numeric"></div>
+    <div class="set-row"><span>Standard-Steuersatz (%)</span><input class="inp" id="s-tax" inputmode="decimal"></div>
+    <div class="set-row"><span>Winkelmodus</span><select class="inp" id="s-ang"><option>DEG</option><option>RAD</option><option>GRAD</option></select></div>
+    <div class="grid2" style="margin-top:14px"><button class="btn danger sm" id="s-reset">Alle Daten löschen</button><button class="btn sm" id="s-close">Fertig</button></div>
+    <p class="hint" style="margin-bottom:0">Alle Daten bleiben nur auf diesem Gerät gespeichert.</p>
+  </div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/*LOGIC-START*/
+const MAXHIST = 10;
+
+function round(x, d) {
+  const f = Math.pow(10, d);
+  const y = parseFloat((Math.abs(x) * f).toPrecision(14));
+  return Math.sign(x) * Math.round(y) / f;
+}
+function clean(x) {
+  if (!isFinite(x)) throw new Error('Ergebnis ungültig');
+  return parseFloat(x.toPrecision(14));
+}
+function fmtNum(x, dec, fixed, group) {
+  if (dec === undefined) dec = 8;
+  if (group === undefined) group = true;
+  if (typeof x !== 'number' || !isFinite(x)) return 'Fehler';
+  const abs = Math.abs(x);
+  if (abs >= 1e15 || (abs > 0 && abs < 1e-9)) {
+    let [m, e] = x.toExponential(Math.min(Math.max(dec, 2), 10)).split('e');
+    if (m.indexOf('.') >= 0) m = m.replace(/0+$/, '').replace(/\.$/, '');
+    return m.replace('.', ',') + 'e' + (e[0] === '+' ? e.slice(1) : e);
+  }
+  const v = round(x, Math.min(dec, 12));
+  let s = Math.abs(v).toFixed(dec);
+  if (!fixed && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  let [i, f] = s.split('.');
+  if (group) i = i.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (v < 0 ? '-' : '') + i + (f ? ',' + f : '');
+}
+function parseDe(s) {
+  if (s === null || s === undefined) return NaN;
+  s = String(s).trim().replace(/\s/g, '').replace(/€|%/g, '');
+  if (!s) return NaN;
+  if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+  else if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '');
+  return /^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(s) ? parseFloat(s) : NaN;
+}
+function toCanon(n) {
+  return String(n).replace(/e\+?(-?\d+)/, 'E$1');
+}
+
+const NAMES = ['asin', 'acos', 'atan', 'sqrt', 'cbrt', 'sin', 'cos', 'tan', 'abs', 'ans', 'log', 'ln', 'pi', 'e'];
+const FUNCS = ['asin', 'acos', 'atan', 'sqrt', 'cbrt', 'sin', 'cos', 'tan', 'abs', 'log', 'ln'];
+
+function tokenize(s) {
+  const t = [];
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === ' ') { i++; continue; }
+    if (/[0-9.]/.test(c)) {
+      let j = i;
+      while (j < s.length && /[0-9.]/.test(s[j])) j++;
+      if (s[j] === 'E' && /^[+-]?\d/.test(s.slice(j + 1))) {
+        j++;
+        if (s[j] === '+' || s[j] === '-') j++;
+        while (j < s.length && /\d/.test(s[j])) j++;
+      }
+      const str = s.slice(i, j);
+      if ((str.match(/\./g) || []).length > 1 || str === '.') throw new Error('Ungültige Zahl');
+      t.push({ t: 'num', v: parseFloat(str) });
+      i = j; continue;
+    }
+    if (/[a-z]/.test(c)) {
+      const w = NAMES.find(n => s.startsWith(n, i));
+      if (!w) throw new Error('Unbekannte Eingabe');
+      if (FUNCS.indexOf(w) >= 0) t.push({ t: 'fn', v: w }); else t.push({ t: 'const', v: w });
+      i += w.length; continue;
+    }
+    if ('+-*/^!%'.indexOf(c) >= 0) { t.push({ t: 'op', v: c }); i++; continue; }
+    if (c === '(') { t.push({ t: '(' }); i++; continue; }
+    if (c === ')') { t.push({ t: ')' }); i++; continue; }
+    throw new Error('Ungültiges Zeichen');
+  }
+  return t;
+}
+function factorial(x) {
+  if (x < 0 || x !== Math.floor(x) || x > 170) throw new Error('Fakultät nur für ganze Zahlen 0–170');
+  let r = 1;
+  for (let k = 2; k <= x; k++) r *= k;
+  return r;
+}
+function applyFn(name, x, angle) {
+  const toRad = a => angle === 'DEG' ? a * Math.PI / 180 : angle === 'GRAD' ? a * Math.PI / 200 : a;
+  const fromRad = r => angle === 'DEG' ? r * 180 / Math.PI : angle === 'GRAD' ? r * 200 / Math.PI : r;
+  const z = v => Math.abs(v) < 1e-14 ? 0 : v;
+  switch (name) {
+    case 'sin': return z(Math.sin(toRad(x)));
+    case 'cos': return z(Math.cos(toRad(x)));
+    case 'tan': {
+      const c = Math.cos(toRad(x));
+      if (Math.abs(c) < 1e-12) throw new Error('tan nicht definiert');
+      return z(Math.sin(toRad(x)) / c);
+    }
+    case 'asin': if (Math.abs(x) > 1) throw new Error('Nur Werte von −1 bis 1'); return fromRad(Math.asin(x));
+    case 'acos': if (Math.abs(x) > 1) throw new Error('Nur Werte von −1 bis 1'); return fromRad(Math.acos(x));
+    case 'atan': return fromRad(Math.atan(x));
+    case 'ln': if (x <= 0) throw new Error('ln nur für Werte > 0'); return Math.log(x);
+    case 'log': if (x <= 0) throw new Error('log nur für Werte > 0'); return Math.log10(x);
+    case 'sqrt': if (x < 0) throw new Error('Wurzel aus negativer Zahl'); return Math.sqrt(x);
+    case 'cbrt': return Math.cbrt(x);
+    case 'abs': return Math.abs(x);
+  }
+  throw new Error('Unbekannte Funktion');
+}
+function evaluate(src, opts) {
+  opts = opts || {};
+  const angle = opts.angle || 'DEG';
+  const ansVal = typeof opts.ans === 'number' ? opts.ans : 0;
+  const toks = tokenize(src);
+  let p = 0;
+  const peek = () => toks[p];
+  const isOp = (tk, ...vs) => tk && tk.t === 'op' && vs.indexOf(tk.v) >= 0;
+
+  function parseExpr() {
+    let left = parseTerm();
+    while (isOp(peek(), '+', '-')) {
+      const op = toks[p++].v;
+      const r = parseTerm();
+      const rv = r.pct ? left.v * r.v : r.v;
+      left = { v: op === '+' ? left.v + rv : left.v - rv, pct: false };
+    }
+    return left;
+  }
+  function startsFactor(tk) {
+    return tk && (tk.t === 'num' || tk.t === 'const' || tk.t === 'fn' || tk.t === '(');
+  }
+  function parseTerm() {
+    let left = parseUnary();
+    for (;;) {
+      const k = peek();
+      if (!k) break;
+      if (isOp(k, '*', '/')) {
+        p++;
+        const r = parseUnary();
+        if (k.v === '/') {
+          if (r.v === 0) throw new Error('Division durch 0');
+          left = { v: left.v / r.v, pct: false };
+        } else left = { v: left.v * r.v, pct: false };
+      } else if (startsFactor(k)) {
+        const r = parseUnary();
+        left = { v: left.v * r.v, pct: false };
+      } else break;
+    }
+    return left;
+  }
+  function parseUnary() {
+    if (isOp(peek(), '-')) { p++; const r = parseUnary(); return { v: -r.v, pct: r.pct }; }
+    if (isOp(peek(), '+')) { p++; return parseUnary(); }
+    return parsePower();
+  }
+  function parsePower() {
+    const base = parsePostfix();
+    if (isOp(peek(), '^')) {
+      p++;
+      const ex = parseUnary();
+      if (base.v === 0 && ex.v < 0) throw new Error('Division durch 0');
+      const v = Math.pow(base.v, ex.v);
+      if (!isFinite(v)) throw new Error('Ergebnis ungültig');
+      return { v, pct: false };
+    }
+    return base;
+  }
+  function parsePostfix() {
+    let x = parsePrimary();
+    for (;;) {
+      if (isOp(peek(), '!')) { p++; x = { v: factorial(x.v), pct: false }; }
+      else if (isOp(peek(), '%')) { p++; x = { v: x.v / 100, pct: true }; }
+      else break;
+    }
+    return x;
+  }
+  function parsePrimary() {
+    const k = toks[p++];
+    if (!k) throw new Error('Eingabe unvollständig');
+    if (k.t === 'num') return { v: k.v, pct: false };
+    if (k.t === 'const') {
+      return { v: k.v === 'pi' ? Math.PI : k.v === 'e' ? Math.E : ansVal, pct: false };
+    }
+    if (k.t === '(') {
+      const r = parseExpr();
+      if (peek() && peek().t === ')') p++;
+      return { v: r.v, pct: false };
+    }
+    if (k.t === 'fn') {
+      if (!peek() || peek().t !== '(') throw new Error('Klammer fehlt');
+      p++;
+      const r = parseExpr();
+      if (peek() && peek().t === ')') p++;
+      return { v: applyFn(k.v, r.v, angle), pct: false };
+    }
+    throw new Error('Eingabe unvollständig');
+  }
+  const res = parseExpr();
+  if (p < toks.length) throw new Error('Ungültiger Ausdruck');
+  return clean(res.v);
+}
+function autoClose(expr) {
+  const stripped = expr.replace(/[+\-*/^]+$/, '');
+  const open = (stripped.match(/\(/g) || []).length - (stripped.match(/\)/g) || []).length;
+  return stripped + ')'.repeat(Math.max(0, open));
+}
+function toDisplay(s) {
+  return s.replace(/\*/g, '×').replace(/\//g, '÷').replace(/-/g, '−')
+    .replace(/asin/g, 'sin⁻¹').replace(/acos/g, 'cos⁻¹').replace(/atan/g, 'tan⁻¹')
+    .replace(/sqrt/g, '√').replace(/cbrt/g, '∛').replace(/pi/g, 'π').replace(/ans/g, 'Ans')
+    .replace(/\./g, ',');
+}
+function negateExpr(expr) {
+  const m = expr.match(/(^|[+*\/^(])(-?)((?:\d+\.?\d*|\.\d+)(?:E[+-]?\d+)?)$/);
+  if (m) return expr.slice(0, m.index) + m[1] + (m[2] ? '' : '-') + m[3];
+  const m2 = expr.match(/((?:\d+\.?\d*|\.\d+)(?:E[+-]?\d+)?)$/);
+  if (m2) return expr.slice(0, m2.index) + '(-' + m2[1] + ')';
+  if (expr === '' || /[+\-*/^(]$/.test(expr)) return expr + '-';
+  return expr;
+}
+
+function pushHistory(list, e, max) {
+  max = max || MAXHIST;
+  if (list.length && list[0].type === e.type && list[0].expr === e.expr && list[0].res === e.res) return list;
+  return [e].concat(list).slice(0, max);
+}
+function priceCalc(amount, rate, mode) {
+  let net, gross;
+  if (mode === 'plus') { net = round(amount, 2); gross = round(net * (1 + rate / 100), 2); }
+  else { gross = round(amount, 2); net = round(gross / (1 + rate / 100), 2); }
+  return { net, tax: round(gross - net, 2), gross };
+}
+function discountCalc(price, pct, kind) {
+  const fin = round(price * (kind === 'disc' ? 1 - pct / 100 : 1 + pct / 100), 2);
+  return { final: fin, diff: round(Math.abs(price - fin), 2) };
+}
+function tipCalc(amount, pct, people, roundUp) {
+  let tip = amount * pct / 100;
+  let per = (amount + tip) / people;
+  if (roundUp) per = Math.ceil(round(per, 6));
+  const total = roundUp ? per * people : amount + tip;
+  if (roundUp) tip = total - amount;
+  return { tip: round(tip, 2), total: round(total, 2), per: round(per, 2) };
+}
+const pctOf = (x, y) => y * x / 100;
+const pctIs = (a, b) => { if (b === 0) throw new Error('Grundwert darf nicht 0 sein'); return a / b * 100; };
+const pctChange = (a, b) => { if (a === 0) throw new Error('Alter Wert darf nicht 0 sein'); return (b - a) / Math.abs(a) * 100; };
+const fxConvert = (amount, rateFrom, rateTo) => amount / rateFrom * rateTo;
+
+const UNITS = {
+  len: { name: 'Länge', items: [['mm', 'Millimeter (mm)', 0.001], ['cm', 'Zentimeter (cm)', 0.01], ['m', 'Meter (m)', 1], ['km', 'Kilometer (km)', 1000], ['in', 'Zoll (in)', 0.0254], ['ft', 'Fuß (ft)', 0.3048], ['yd', 'Yard (yd)', 0.9144], ['mi', 'Meile (mi)', 1609.344], ['nm', 'Seemeile (nm)', 1852]] },
+  mass: { name: 'Gewicht', items: [['mg', 'Milligramm (mg)', 1e-6], ['g', 'Gramm (g)', 0.001], ['kg', 'Kilogramm (kg)', 1], ['t', 'Tonne (t)', 1000], ['oz', 'Unze (oz)', 0.028349523125], ['lb', 'Pfund (lb)', 0.45359237]] },
+  temp: { name: 'Temperatur', temp: true, items: [['C', 'Celsius (°C)'], ['F', 'Fahrenheit (°F)'], ['K', 'Kelvin (K)']] },
+  vol: { name: 'Volumen', items: [['ml', 'Milliliter (ml)', 0.001], ['l', 'Liter (l)', 1], ['m3', 'Kubikmeter (m³)', 1000], ['floz', 'fl oz (US)', 0.0295735295625], ['cup', 'Tasse (US cup)', 0.2365882365], ['pt', 'Pint (US)', 0.473176473], ['gal', 'Gallone (US)', 3.785411784], ['galuk', 'Gallone (UK)', 4.54609]] },
+  area: { name: 'Fläche', items: [['cm2', 'cm²', 0.0001], ['m2', 'm²', 1], ['ha', 'Hektar (ha)', 10000], ['km2', 'km²', 1e6], ['ft2', 'ft²', 0.09290304], ['ac', 'Acre', 4046.8564224]] },
+  speed: { name: 'Geschwindigkeit', items: [['kmh', 'km/h', 1 / 3.6], ['ms', 'm/s', 1], ['mph', 'mph', 0.44704], ['kn', 'Knoten', 1852 / 3600]] }
+};
+function convertUnit(cat, v, from, to) {
+  const c = UNITS[cat];
+  if (c.temp) {
+    const toC = { C: x => x, F: x => (x - 32) * 5 / 9, K: x => x - 273.15 }[from](v);
+    return clean({ C: x => x, F: x => x * 9 / 5 + 32, K: x => x + 273.15 }[to](toC));
+  }
+  const f = c.items.find(i => i[0] === from)[2];
+  const t = c.items.find(i => i[0] === to)[2];
+  return clean(v * f / t);
+}
+
+/* ---- Datum, Zeit, Finanzen, Sonstiges ---- */
+const DAY = 86400000;
+const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+const pad2 = n => (n < 10 ? '0' : '') + n;
+function parseISO(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+  if (!m) return null;
+  const t = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+  const d = new Date(t);
+  return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3] ? t : null;
+}
+function toISO(t) { const d = new Date(t); return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()); }
+function fmtDate(t) { const d = new Date(t); return pad2(d.getUTCDate()) + '.' + pad2(d.getUTCMonth() + 1) + '.' + d.getUTCFullYear(); }
+function daysBetween(a, b) { return Math.round((b - a) / DAY); }
+function ymd(a, b) {
+  const A = new Date(a), B = new Date(b);
+  let months = (B.getUTCFullYear() - A.getUTCFullYear()) * 12 + B.getUTCMonth() - A.getUTCMonth();
+  if (addMonths(a, months) > b) months--;
+  return { y: Math.floor(months / 12), m: months % 12, d: daysBetween(addMonths(a, months), b) };
+}
+function addMonths(t, n) {
+  const d = new Date(t);
+  const y = d.getUTCFullYear(), m = d.getUTCMonth() + n, day = d.getUTCDate();
+  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return Date.UTC(y, m, Math.min(day, last));
+}
+function isoWeek(t) {
+  const target = new Date(t);
+  const dayNr = (target.getUTCDay() + 6) % 7;
+  target.setUTCDate(target.getUTCDate() - dayNr + 3);
+  const firstThursday = target.valueOf();
+  target.setUTCMonth(0, 1);
+  if (target.getUTCDay() !== 4) target.setUTCMonth(0, 1 + ((4 - target.getUTCDay()) + 7) % 7);
+  return 1 + Math.ceil((firstThursday - target) / (7 * DAY));
+}
+function workdays(a, b) {
+  if (b < a) { const x = a; a = b; b = x; }
+  let n = 0;
+  for (let t = a; t <= b; t += DAY) { const w = new Date(t).getUTCDay(); if (w !== 0 && w !== 6) n++; }
+  return n;
+}
+function parseHM(s) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(s || '');
+  if (!m || +m[1] > 23 || +m[2] > 59) return null;
+  return +m[1] * 60 + +m[2];
+}
+function fmtHM(min) { min = Math.round(min); return Math.floor(min / 60) + ':' + pad2(min % 60); }
+function workMinutes(s, e, pause) {
+  let m = e - s;
+  if (m < 0) m += 1440;
+  m -= pause || 0;
+  if (m < 0) throw new Error('Pause ist länger als die Arbeitszeit');
+  return m;
+}
+function loanCalc(P, ratePct, years) {
+  const n = Math.round(years * 12);
+  if (!(P > 0) || !(n > 0) || ratePct < 0) throw new Error('Bitte Darlehen, Zins und Laufzeit prüfen');
+  const r = ratePct / 100 / 12;
+  const m = r === 0 ? P / n : P * r / (1 - Math.pow(1 + r, -n));
+  return { monthly: m, total: m * n, interest: m * n - P, n: n };
+}
+function savingsCalc(start, monthly, ratePct, years) {
+  const n = Math.round(years * 12);
+  if (!(n > 0) || ratePct < 0) throw new Error('Bitte Zins und Laufzeit prüfen');
+  const r = Math.pow(1 + ratePct / 100, 1 / 12) - 1;
+  const fv = r === 0 ? start + monthly * n : start * Math.pow(1 + r, n) + monthly * (Math.pow(1 + r, n) - 1) / r;
+  const paid = start + monthly * n;
+  return { end: fv, paid: paid, gain: fv - paid };
+}
+function fuelCalc(km, per100, price) { const liters = km * per100 / 100; return { liters: liters, cost: liters * price }; }
+function consumption(km, liters) { if (!(km > 0)) throw new Error('Die Strecke muss größer als 0 sein'); return liters / km * 100; }
+function ratioCalc(a, b, c, inverse) {
+  if (inverse) { if (c === 0) throw new Error('C darf nicht 0 sein'); return a * b / c; }
+  if (a === 0) throw new Error('A darf nicht 0 sein');
+  return b * c / a;
+}
+function unitPrice(price, qty, factor) {
+  if (!(qty > 0)) throw new Error('Die Menge muss größer als 0 sein');
+  return price / qty * factor;
+}
+const BASE_RE = { 2: /^[01]+$/, 8: /^[0-7]+$/, 10: /^[0-9]+$/, 16: /^[0-9A-F]+$/ };
+function fromBase(str, base) {
+  let s = String(str).replace(/[\s_]/g, '').toUpperCase();
+  let neg = false;
+  if (s[0] === '-') { neg = true; s = s.slice(1); }
+  if (base === 16) s = s.replace(/^0X/, '');
+  if (base === 2) s = s.replace(/^0B/, '');
+  if (!BASE_RE[base].test(s)) throw new Error('Ungültige Ziffern für dieses Zahlensystem');
+  const n = parseInt(s, base);
+  if (!Number.isSafeInteger(n)) throw new Error('Die Zahl ist zu groß');
+  return neg ? -n : n;
+}
+function toBase(n, base) { return n.toString(base).toUpperCase(); }
+function randInt(min, max, rng) {
+  if (!(max >= min)) throw new Error('„Bis“ muss größer oder gleich „Von“ sein');
+  return min + Math.floor(rng() * (max - min + 1));
+}
+function lottoDraw(rng) {
+  const pool = [];
+  for (let i = 1; i <= 49; i++) pool.push(i);
+  const out = [];
+  for (let k = 0; k < 6; k++) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+  return { numbers: out.sort((a, b) => a - b), super: Math.floor(rng() * 10) };
+}
+
+function mixCalc(x, mode, amountMl, inclusive) {
+  if (!(x > 0) || !(amountMl > 0)) throw new Error('Bitte Verhältnis und Menge prüfen');
+  const water = inclusive ? x - 1 : x;
+  if (!(water > 0)) throw new Error('Bei „insgesamt X Teile“ muss X größer als 1 sein');
+  const parts = 1 + water;
+  let conc, w;
+  if (mode === 'water') { w = amountMl; conc = w / water; }
+  else if (mode === 'total') { conc = amountMl / parts; w = amountMl - conc; }
+  else { conc = amountMl; w = conc * water; }
+  return { conc: conc, water: w, total: conc + w };
+}
+
+/* ---- Konfigurierbare Leiste ---- */
+const BAR_SLOTS = 5;
+function barNormalize(bar, validIds, def) {
+  const src = Array.isArray(bar) ? bar : def;
+  const out = [];
+  src.slice(0, BAR_SLOTS).forEach(id => out.push(validIds.indexOf(id) >= 0 && out.indexOf(id) < 0 ? id : null));
+  while (out.length < BAR_SLOTS) out.push(null);
+  return out;
+}
+function barPlace(bar, id, i) {
+  const b = bar.slice();
+  const j = b.indexOf(id);
+  if (j === i) return b;
+  if (j >= 0) { b[j] = b[i]; b[i] = id; } else b[i] = id;
+  return b;
+}
+function barRemove(bar, i) { const b = bar.slice(); b[i] = null; return b; }
+function barAdd(bar, id) {
+  if (bar.indexOf(id) >= 0) return null;
+  const i = bar.indexOf(null);
+  if (i < 0) return null;
+  const b = bar.slice(); b[i] = id; return b;
+}
+/*LOGIC-END*/
+
+/* ===== App ===== */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  if (props) for (const k in props) {
+    if (k === 'class') e.className = props[k];
+    else if (k === 'text') e.textContent = props[k];
+    else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), props[k]);
+    else e.setAttribute(k, props[k]);
+  }
+  for (const c of kids.flat()) { if (c === null || c === undefined) continue; e.append(c.nodeType ? c : document.createTextNode(c)); }
+  return e;
+}
+
+const FX_DEFAULT = { USD: 1.08, GBP: 0.85, CHF: 0.94, PLN: 4.25, CZK: 24.5, TRY: 38, JPY: 162, CNY: 7.8, SEK: 11.3, NOK: 11.7, DKK: 7.46 };
+const FX_NAMES = { EUR: 'Euro', USD: 'US-Dollar', GBP: 'Brit. Pfund', CHF: 'Schweizer Franken', PLN: 'Polnischer Złoty', CZK: 'Tschechische Krone', TRY: 'Türkische Lira', JPY: 'Japanischer Yen', CNY: 'Chinesischer Yuan', SEK: 'Schwedische Krone', NOK: 'Norwegische Krone', DKK: 'Dänische Krone', AUD: 'Austral. Dollar', CAD: 'Kanad. Dollar', HUF: 'Ungarischer Forint', RON: 'Rumän. Leu', BGN: 'Bulgar. Lew', INR: 'Indische Rupie', BRL: 'Brasil. Real', MXN: 'Mexikan. Peso', KRW: 'Südkoreanischer Won', ZAR: 'Südafrikan. Rand', SGD: 'Singapur-Dollar', HKD: 'Hongkong-Dollar', NZD: 'Neuseeland-Dollar', ILS: 'Israelischer Schekel', THB: 'Thailändischer Baht', IDR: 'Indones. Rupiah', MYR: 'Malays. Ringgit', PHP: 'Philippin. Peso', ISK: 'Isländische Krone' };
+const FX_FAV = ['EUR', 'USD', 'GBP', 'CHF', 'PLN', 'CZK', 'TRY', 'JPY', 'CNY', 'SEK', 'NOK', 'DKK'];
+
+function defaultState() {
+  const rates = { EUR: { auto: 1, manual: null } };
+  for (const c in FX_DEFAULT) rates[c] = { auto: FX_DEFAULT[c], manual: null };
+  return {
+    settings: { theme: 'auto', vib: true, dec: 8, tax: 19, angle: 'DEG' },
+    history: [], mem: 0, ans: null, bar: null, tools: {}, list: [], notes: '', timer: { total: 300000, left: 300000, end: null, done: false },
+    fx: { rates, date: null, fetched: null, from: 'EUR', to: 'USD', amount: '100' }
+  };
+}
+const STORE_KEY = 'rechner-app-v1';
+let S = defaultState();
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const j = JSON.parse(raw);
+    const d = defaultState();
+    S = Object.assign(d, j);
+    S.settings = Object.assign(d.settings, j.settings || {});
+    S.fx = Object.assign(d.fx, j.fx || {});
+    S.fx.rates = Object.assign(d.fx.rates, (j.fx && j.fx.rates) || {});
+    if (!Array.isArray(S.history)) S.history = [];
+    S.history = S.history.slice(0, MAXHIST);
+  } catch (e) { /* defekte Daten ignorieren */ }
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* ignorieren */ } }
+load();
+
+/* Hilfsfunktionen */
+const fmtCalc = x => fmtNum(x, S.settings.dec);
+const money = x => fmtNum(x, 2, true);
+const plain = x => fmtNum(x, 8, false, false);
+let toastTimer;
+function toast(msg, ms) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms || 1600);
+}
+function vib() { if (S.settings.vib && navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { } } }
+function copyText(text) {
+  const done = () => toast('Kopiert: ' + text);
+  const fallback = () => {
+    const ta = h('textarea', { style: 'position:fixed;opacity:0' }); ta.value = text; document.body.append(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { toast('Kopieren nicht möglich'); }
+    ta.remove();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-copy]');
+  if (c && c.dataset.copy) copyText(c.dataset.copy);
+});
+function groupTyped(str) {
+  const neg = str[0] === '-';
+  const s = neg ? str.slice(1) : str;
+  const [i, f] = s.split('.');
+  return (neg ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (f !== undefined ? ',' + f : '');
+}
+
+/* ===== Verlauf ===== */
+let pending = null, trackTimer = null;
+function addHistory(e) {
+  e.ts = Date.now();
+  S.history = pushHistory(S.history, e);
+  save();
+  if ($('#tab-hist').classList.contains('active')) renderHistory();
+}
+function track(e, immediate) {
+  pending = e; clearTimeout(trackTimer);
+  if (immediate) flush(); else trackTimer = setTimeout(flush, 1600);
+}
+function flush() { clearTimeout(trackTimer); if (pending) { addHistory(pending); pending = null; } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+window.addEventListener('pagehide', flush);
+
+const BADGE = { calc: 'Rechner', sci: 'Wiss.', fx: 'Währung', price: 'Preis', extra: 'Helfer' };
+function fmtTime(ts) {
+  const d = new Date(ts), now = new Date();
+  const t = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  if (d.toDateString() === now.toDateString()) return t;
+  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + ' ' + t;
+}
+function renderHistory() {
+  const list = $('#h-list'); list.textContent = '';
+  $('#h-count').textContent = S.history.length + ' von ' + MAXHIST + ' Einträgen';
+  $('#h-clear').classList.toggle('hidden', !S.history.length);
+  $('#h-tip').classList.toggle('hidden', !S.history.length);
+  if (!S.history.length) { list.append(h('li', { class: 'empty', text: 'Noch keine Einträge. Deine letzten Berechnungen erscheinen hier.' })); return; }
+  S.history.forEach((e, idx) => {
+    let timer = null, longDone = false;
+    const li = h('li', { class: 'h-item' },
+      h('span', { class: 'badge b-' + e.type, text: BADGE[e.type] || e.type }),
+      h('div', { class: 'h-main' }, h('div', { class: 'h-expr', text: e.expr }), h('div', { class: 'h-res', text: '= ' + e.res })),
+      h('div', { class: 'h-side' }, h('span', { class: 'h-time', text: fmtTime(e.ts) }),
+        h('div', { class: 'h-btns' },
+          h('button', { 'aria-label': 'Kopieren', text: '⧉', onclick: ev => { ev.stopPropagation(); copyText(e.copy || e.res); } }),
+          h('button', { 'aria-label': 'Löschen', text: '✕', onclick: ev => { ev.stopPropagation(); S.history.splice(idx, 1); save(); renderHistory(); } }))));
+    li.addEventListener('pointerdown', () => { longDone = false; timer = setTimeout(() => { longDone = true; vib(); copyText(e.copy || e.res); }, 550); });
+    const cancel = () => clearTimeout(timer);
+    li.addEventListener('pointerup', cancel); li.addEventListener('pointerleave', cancel); li.addEventListener('pointercancel', cancel);
+    li.addEventListener('click', () => {
+      if (longDone) { longDone = false; return; }
+      if (typeof e.value === 'number') { classic.setValue(e.value); switchTab('calc'); toast('In den Rechner übernommen'); }
+    });
+    list.append(li);
+  });
+}
+$('#h-clear').addEventListener('click', () => {
+  if (confirm('Wirklich alle Einträge im Verlauf löschen?')) { S.history = []; save(); renderHistory(); }
+});
+
+/* ===== Rechner-Engine (klassisch + wissenschaftlich) ===== */
+function makeCalc(id, type) {
+  const st = { expr: '', done: false, value: 0, err: null, prev: '0', second: false };
+  const exprEl = $('#' + id + '-expr'), resEl = $('#' + id + '-res'), mEl = $('#' + id + '-m');
+  const ev = s => evaluate(s, { angle: S.settings.angle, ans: S.ans === null ? 0 : S.ans });
+  const OPS = '+-*/^';
+  const lastCh = () => st.expr.slice(-1);
+  const isOperandEnd = () => /[0-9.)!%]$|pi$|e$|ans$/.test(st.expr);
+
+  function fresh() { if (st.done) { st.expr = ''; st.done = false; } }
+  function cont() { if (st.done) { st.expr = toCanon(st.value); st.done = false; } }
+  function append(t) { if (st.expr.length < 200) st.expr += t; }
+
+  function fitRes() {
+    const n = resEl.textContent.length;
+    resEl.style.fontSize = st.err ? '' : (n > 20 ? '22px' : n > 16 ? '28px' : n > 12 ? '36px' : n > 9 ? '42px' : '');
+  }
+  function render() {
+    resEl.classList.remove('preview', 'err');
+    let shown;
+    if (st.err) { shown = st.err; resEl.classList.add('err'); }
+    else if (st.done) { shown = fmtCalc(st.value); }
+    else if (st.expr === '') { shown = '0'; }
+    else if (/^-?[0-9.]+$/.test(st.expr)) { shown = groupTyped(st.expr); }
+    else {
+      try { const v = ev(autoClose(st.expr)); shown = fmtCalc(v); st.prev = shown; resEl.classList.add('preview'); }
+      catch (e) { shown = st.prev; resEl.classList.add('preview'); }
+    }
+    resEl.textContent = shown;
+    resEl.dataset.copy = '';
+    exprEl.textContent = st.done ? toDisplay(autoClose(st.expr)) + ' =' : toDisplay(st.expr);
+    exprEl.scrollLeft = exprEl.scrollWidth;
+    mEl.textContent = S.mem !== 0 ? 'M' : '';
+    fitRes();
+  }
+  function currentValue() {
+    if (st.done) return st.value;
+    try { return ev(autoClose(st.expr)); } catch (e) { return null; }
+  }
+  function doEquals() {
+    if (!st.expr || st.done) return;
+    try {
+      const closed = autoClose(st.expr);
+      if (!closed) return;
+      const v = ev(closed);
+      st.value = v; st.done = true; st.err = null; S.ans = v;
+      const res = fmtCalc(v);
+      track({ type: type, expr: toDisplay(closed), res: res, value: v, copy: plain(v) }, true);
+      save();
+    } catch (e) { st.err = e.message || 'Fehler'; }
+  }
+  function press(k) {
+    st.err = null;
+    if (/^[0-9]$/.test(k)) {
+      fresh();
+      const m = st.expr.match(/(^|[^0-9.])0$/);
+      if (m) { if (k === '0') return render(); st.expr = st.expr.slice(0, -1) + k; } else append(k);
+    } else if (k === '.') {
+      fresh();
+      const t = st.expr.match(/[0-9.]*$/)[0];
+      if (t.indexOf('.') >= 0) return render();
+      append(t === '' ? '0.' : '.');
+    } else if (k.length === 1 && OPS.indexOf(k) >= 0) {
+      cont();
+      if (st.expr === '') {
+        if (k === '-') append('-'); else append((S.ans === null ? '0' : 'ans') + k);
+      } else if (OPS.indexOf(lastCh()) >= 0 || lastCh() === '(') {
+        const last = lastCh();
+        if (k === '-' && ('*/^('.indexOf(last) >= 0)) append('-');
+        else if (last !== '(') {
+          st.expr = st.expr.replace(/[+\-*/^]+$/, '');
+          if (st.expr === '' || st.expr.slice(-1) === '(') { if (k === '-') append('-'); } else append(k);
+        }
+      } else append(k);
+    } else if (k === '(') { fresh(); append('('); }
+    else if (k === ')') {
+      cont();
+      const open = (st.expr.match(/\(/g) || []).length - (st.expr.match(/\)/g) || []).length;
+      if (open > 0 && isOperandEnd()) append(')');
+    } else if (k === '%' || k === '!') { cont(); if (isOperandEnd()) append(k); }
+    else if (k === 'C') { st.expr = ''; st.done = false; st.prev = '0'; }
+    else if (k === 'BS') {
+      if (st.done) { st.expr = ''; st.done = false; }
+      else st.expr = st.expr.replace(/(asin|acos|atan|sin|cos|tan|ln|log|sqrt|cbrt|abs)\($|pi$|ans$|\^\(1\/$|.$/, '');
+    } else if (k === 'NEG') { cont(); st.expr = negateExpr(st.expr); }
+    else if (k === '=') doEquals();
+    else if (k.slice(0, 6) === 'start:') { fresh(); append(k.slice(6)); }
+    else if (k.slice(0, 5) === 'post:') { cont(); if (isOperandEnd()) append(k.slice(5)); }
+    else if (k.slice(0, 6) === 'const:') { fresh(); append(k.slice(6)); }
+    else if (k === 'MC') { S.mem = 0; save(); }
+    else if (k === 'MR') { fresh(); const m = S.mem; append(m < 0 ? '(' + toCanon(m) + ')' : toCanon(m)); }
+    else if (k === 'M+' || k === 'M-') {
+      const v = currentValue();
+      if (v === null) { toast('Erst einen Wert eingeben'); } else {
+        S.mem = clean(S.mem + (k === 'M+' ? v : -v)); save();
+        toast('Speicher: ' + fmtCalc(S.mem));
+      }
+    }
+    render();
+  }
+  function setValue(v) { st.expr = toCanon(v); st.done = false; st.err = null; render(); }
+  resEl.addEventListener('click', () => {
+    const v = currentValue();
+    if (v !== null && !st.err) copyText(plain(v));
+  });
+  return { press, render, setValue, st };
+}
+
+function buildKeys(container, layout, onPress) {
+  container.textContent = '';
+  layout.forEach(d => {
+    const b = h('button', { class: 'key ' + (d.c || ''), 'data-k': d.k, type: 'button', text: d.l });
+    if (d.ak) { b.dataset.ak = d.ak; b.dataset.l = d.l; b.dataset.al = d.al; }
+    container.append(b);
+  });
+  container.addEventListener('click', e => {
+    const b = e.target.closest('.key'); if (!b) return;
+    vib(); onPress(b);
+  });
+}
+
+const classic = makeCalc('calc', 'calc');
+buildKeys($('#calc-keys'), [
+  { l: 'C', k: 'C', c: 'fn' }, { l: '⌫', k: 'BS', c: 'fn' }, { l: '%', k: '%', c: 'fn' }, { l: '÷', k: '/', c: 'op' },
+  { l: '7', k: '7' }, { l: '8', k: '8' }, { l: '9', k: '9' }, { l: '×', k: '*', c: 'op' },
+  { l: '4', k: '4' }, { l: '5', k: '5' }, { l: '6', k: '6' }, { l: '−', k: '-', c: 'op' },
+  { l: '1', k: '1' }, { l: '2', k: '2' }, { l: '3', k: '3' }, { l: '+', k: '+', c: 'op' },
+  { l: '±', k: 'NEG', c: 'fn' }, { l: '0', k: '0' }, { l: ',', k: '.' }, { l: '=', k: '=', c: 'eq' }
+], b => classic.press(b.dataset.k));
+
+const sci = makeCalc('sci', 'sci');
+const SCI_FN = [
+  { l: '2nd', k: '2ND', c: 'fn sm tog' }, { l: 'DEG', k: 'ANG', c: 'fn sm' }, { l: '(', k: '(', c: 'fn sm' }, { l: ')', k: ')', c: 'fn sm' }, { l: '⌫', k: 'BS', c: 'fn sm' },
+  { l: 'sin', k: 'start:sin(', al: 'sin⁻¹', ak: 'start:asin(', c: 'fn sm' }, { l: 'cos', k: 'start:cos(', al: 'cos⁻¹', ak: 'start:acos(', c: 'fn sm' }, { l: 'tan', k: 'start:tan(', al: 'tan⁻¹', ak: 'start:atan(', c: 'fn sm' },
+  { l: 'ln', k: 'start:ln(', al: 'eˣ', ak: 'start:e^(', c: 'fn sm' }, { l: 'log', k: 'start:log(', al: '10ˣ', ak: 'start:10^(', c: 'fn sm' },
+  { l: 'x²', k: 'post:^2', al: 'x³', ak: 'post:^3', c: 'fn sm' }, { l: 'xʸ', k: '^', al: 'ʸ√x', ak: 'post:^(1/', c: 'fn sm' }, { l: '√', k: 'start:sqrt(', al: '∛', ak: 'start:cbrt(', c: 'fn sm' },
+  { l: 'x!', k: '!', al: '|x|', ak: 'start:abs(', c: 'fn sm' }, { l: '1/x', k: 'post:^(-1)', al: '%', ak: '%', c: 'fn sm' },
+  { l: 'π', k: 'const:pi', c: 'fn sm' }, { l: 'e', k: 'const:e', c: 'fn sm' }, { l: 'Ans', k: 'const:ans', c: 'fn sm' }, { l: '±', k: 'NEG', c: 'fn sm' }, { l: 'C', k: 'C', c: 'fn sm' }
+];
+let second = false;
+function setSecond(on) {
+  second = on;
+  $$('#sci-fn .key').forEach(b => {
+    if (b.dataset.k === '2ND') b.classList.toggle('on', on);
+    if (b.dataset.ak) b.textContent = on ? b.dataset.al : b.dataset.l;
+  });
+}
+function updateAngleLabel() {
+  $('#sci-ang').textContent = S.settings.angle;
+  const b = $('#sci-fn .key[data-k="ANG"]'); if (b) b.textContent = S.settings.angle;
+  $('#s-ang').value = S.settings.angle;
+}
+buildKeys($('#sci-fn'), SCI_FN, b => {
+  const k = b.dataset.k;
+  if (k === '2ND') { setSecond(!second); return; }
+  if (k === 'ANG') {
+    const order = ['DEG', 'RAD', 'GRAD'];
+    S.settings.angle = order[(order.indexOf(S.settings.angle) + 1) % 3]; save(); updateAngleLabel(); sci.render(); return;
+  }
+  const useK = second && b.dataset.ak ? b.dataset.ak : k;
+  if (second && b.dataset.ak) setSecond(false);
+  sci.press(useK);
+});
+buildKeys($('#sci-num'), [
+  { l: 'MC', k: 'MC', c: 'fn sm' }, { l: '7', k: '7' }, { l: '8', k: '8' }, { l: '9', k: '9' }, { l: '÷', k: '/', c: 'op' },
+  { l: 'MR', k: 'MR', c: 'fn sm' }, { l: '4', k: '4' }, { l: '5', k: '5' }, { l: '6', k: '6' }, { l: '×', k: '*', c: 'op' },
+  { l: 'M+', k: 'M+', c: 'fn sm' }, { l: '1', k: '1' }, { l: '2', k: '2' }, { l: '3', k: '3' }, { l: '−', k: '-', c: 'op' },
+  { l: 'M−', k: 'M-', c: 'fn sm' }, { l: '0', k: '0' }, { l: ',', k: '.' }, { l: '=', k: '=', c: 'eq' }, { l: '+', k: '+', c: 'op' }
+], b => sci.press(b.dataset.k));
+
+/* Tastatur (Desktop) */
+document.addEventListener('keydown', e => {
+  const tab = $('.panel.active').id;
+  if (tab !== 'tab-calc' && tab !== 'tab-sci') return;
+  if (e.target.closest('input,select,textarea,dialog')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const calc = tab === 'tab-calc' ? classic : sci;
+  let k = null;
+  if (/^[0-9]$/.test(e.key)) k = e.key;
+  else if (e.key === ',' || e.key === '.') k = '.';
+  else if ('+-*/^()%!'.indexOf(e.key) >= 0 && e.key.length === 1) k = e.key;
+  else if (e.key === 'Enter' || e.key === '=') k = '=';
+  else if (e.key === 'Backspace') k = 'BS';
+  else if (e.key === 'Escape' || e.key === 'Delete') k = 'C';
+  else if (tab === 'tab-sci' && e.key === 'p') k = 'const:pi';
+  if (k) { e.preventDefault(); calc.press(k); }
+});
+
+/* ===== Währung ===== */
+const fxName = c => FX_NAMES[c] || '';
+const fxDec = c => c === 'JPY' || c === 'KRW' || c === 'IDR' || c === 'HUF' ? 0 : 2;
+function fxRate(c) { const r = S.fx.rates[c]; if (!r) return null; const v = r.manual !== null && r.manual !== undefined ? r.manual : r.auto; return v > 0 ? v : null; }
+function fxCodes() {
+  const all = Object.keys(S.fx.rates).filter(c => fxRate(c));
+  const fav = FX_FAV.filter(c => all.indexOf(c) >= 0);
+  const rest = all.filter(c => fav.indexOf(c) < 0).sort();
+  return fav.concat(rest);
+}
+function fillSelect(sel, codes, value) {
+  sel.textContent = '';
+  codes.forEach(c => sel.append(h('option', { value: c, text: c })));
+  sel.value = codes.indexOf(value) >= 0 ? value : codes[0];
+}
+function fxStatus(extra) {
+  const f = S.fx;
+  let t;
+  if (f.fetched && f.date) {
+    const [y, m, d] = f.date.split('-');
+    t = 'Stand: ' + d + '.' + m + '.' + y + ' (EZB-Referenzkurse)';
+  } else t = 'Startwerte (nur Näherung). Bitte einmal mit Internet aktualisieren.';
+  $('#fx-status').textContent = t + (extra ? ' · ' + extra : '');
+}
+function fxRenderResult(record) {
+  const f = S.fx;
+  const amt = parseDe($('#fx-amt').value);
+  const from = $('#fx-from').value, to = $('#fx-to').value;
+  f.from = from; f.to = to; f.amount = $('#fx-amt').value; save();
+  const rf = fxRate(from), rt = fxRate(to);
+  const out = $('#fx-out');
+  if (!rf || !rt) { out.textContent = '–'; out.dataset.copy = ''; return; }
+  $('#fx-rate').textContent = '1 ' + from + ' = ' + fmtNum(rt / rf, 4, false) + ' ' + to;
+  $('#fx-names').textContent = [fxName(from), fxName(to)].filter(Boolean).join(' → ');
+  const quick = $('#fx-quick'); quick.textContent = '';
+  if (isNaN(amt)) { out.textContent = '–'; out.dataset.copy = ''; }
+  else {
+    const v = fxConvert(amt, rf, rt);
+    const resTxt = fmtNum(v, fxDec(to), true) + ' ' + to;
+    out.textContent = resTxt; out.dataset.copy = fmtNum(v, fxDec(to), true, false);
+    if (record) track({ type: 'fx', expr: fmtNum(amt, fxDec(from), true) + ' ' + from + ' → ' + to, res: resTxt, value: round(v, fxDec(to)), copy: fmtNum(v, fxDec(to), true, false) });
+    FX_FAV.filter(c => fxRate(c) && c !== from).slice(0, 6).forEach(c => {
+      const q = fxConvert(amt, rf, fxRate(c));
+      quick.append(h('div', { class: 'row' }, h('span', { text: c + (fxName(c) ? ' ' + fxName(c) : '') }), h('b', { text: fmtNum(q, fxDec(c), true), 'data-copy': fmtNum(q, fxDec(c), true, false) })));
+    });
+  }
+}
+function fxRenderSelects() {
+  const codes = fxCodes();
+  fillSelect($('#fx-from'), codes, S.fx.from); fillSelect($('#fx-to'), codes, S.fx.to);
+}
+function fxRenderEdit() {
+  const box = $('#fx-editrows'); box.textContent = '';
+  Object.keys(S.fx.rates).filter(c => c !== 'EUR').sort((a, b) => {
+    const ia = FX_FAV.indexOf(a), ib = FX_FAV.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+  }).forEach(c => {
+    const r = S.fx.rates[c];
+    const eff = r.manual !== null && r.manual !== undefined ? r.manual : r.auto;
+    const inp = h('input', { class: 'inp', inputmode: 'decimal', value: eff ? String(eff).replace('.', ',') : '', 'aria-label': 'Kurs ' + c });
+    inp.addEventListener('change', () => {
+      const v = parseDe(inp.value);
+      if (v > 0) { r.manual = v; save(); fxRenderEdit(); fxRenderResult(false); } else toast('Ungültiger Kurs');
+    });
+    const isCustom = r.auto === null || r.auto === undefined;
+    const btn = h('button', { class: 'btn alt sm', style: 'min-height:44px;padding:0', text: isCustom ? '✕' : '↺', 'aria-label': isCustom ? 'Entfernen' : 'Zurücksetzen' });
+    if (!isCustom && (r.manual === null || r.manual === undefined)) btn.disabled = true;
+    btn.addEventListener('click', () => {
+      if (isCustom) delete S.fx.rates[c]; else r.manual = null;
+      save(); fxRenderEdit(); fxRenderSelects(); fxRenderResult(false);
+    });
+    box.append(h('div', { class: 'edit-row' }, h('div', { class: 'code' }, c, h('small', { text: fxName(c) })), inp, btn));
+  });
+}
+async function fxUpdate(userTap) {
+  const urls = ['https://api.frankfurter.dev/v1/latest?base=EUR', 'https://api.frankfurter.app/latest?from=EUR'];
+  for (const u of urls) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 7000);
+      const r = await fetch(u, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(to);
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (!j || !j.rates) continue;
+      for (const c in j.rates) {
+        const v = j.rates[c];
+        if (typeof v === 'number' && v > 0) { if (!S.fx.rates[c]) S.fx.rates[c] = { auto: null, manual: null }; S.fx.rates[c].auto = v; }
+      }
+      S.fx.rates.EUR = { auto: 1, manual: null };
+      S.fx.date = j.date; S.fx.fetched = Date.now(); save();
+      fxRenderSelects(); fxRenderResult(false); fxRenderEdit(); fxStatus(userTap ? 'aktualisiert' : '');
+      return true;
+    } catch (e) { /* nächste URL */ }
+  }
+  fxStatus(userTap ? 'Offline – gespeicherte Kurse werden verwendet' : '');
+  if (userTap) toast('Keine Verbindung – gespeicherte Kurse');
+  return false;
+}
+$('#fx-amt').value = S.fx.amount || '';
+fxRenderSelects(); fxStatus(''); fxRenderResult(false); fxRenderEdit();
+$('#fx-amt').addEventListener('input', () => fxRenderResult(true));
+$('#fx-from').addEventListener('change', () => fxRenderResult(true));
+$('#fx-to').addEventListener('change', () => fxRenderResult(true));
+$('#fx-swap').addEventListener('click', () => {
+  const a = $('#fx-from').value; $('#fx-from').value = $('#fx-to').value; $('#fx-to').value = a; vib(); fxRenderResult(true);
+});
+$('#fx-refresh').addEventListener('click', () => { toast('Aktualisiere …'); fxUpdate(true); });
+$('#fx-editbtn').addEventListener('click', () => { $('#fx-edit').classList.toggle('hidden'); });
+$('#fx-add').addEventListener('click', () => {
+  const code = $('#fx-newcode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const v = parseDe($('#fx-newrate').value);
+  if (code.length < 2 || !(v > 0) || code === 'EUR') { toast('Kürzel und Kurs prüfen'); return; }
+  if (!S.fx.rates[code]) S.fx.rates[code] = { auto: null, manual: v }; else S.fx.rates[code].manual = v;
+  $('#fx-newcode').value = ''; $('#fx-newrate').value = '';
+  save(); fxRenderEdit(); fxRenderSelects(); fxRenderResult(false); toast(code + ' hinzugefügt');
+});
+if (navigator.onLine !== false) fxUpdate(false);
+window.addEventListener('online', () => fxUpdate(false));
+
+/* ===== Preis ===== */
+const P = { mode: null, rate: Number(S.settings.tax) };
+function priceChips() {
+  const box = $('#pr-chips'); box.textContent = '';
+  [19, 7, 0].forEach(r => box.append(h('button', { class: 'chip' + (P.rate === r ? ' on' : ''), type: 'button', text: r + ' %', onclick: () => { P.rate = r; priceChips(); priceRender(true); } })));
+  const own = h('input', { class: 'inp', id: 'pr-own', inputmode: 'decimal', placeholder: 'eigener %', 'aria-label': 'Eigener Steuersatz', style: 'width:110px;min-height:44px;font-size:16px;border-radius:999px;text-align:center' });
+  if ([19, 7, 0].indexOf(P.rate) < 0) own.value = String(P.rate).replace('.', ',');
+  own.addEventListener('input', () => { const v = parseDe(own.value); if (!isNaN(v) && v >= 0) { P.rate = v; $$('#pr-chips .chip').forEach(c => c.classList.remove('on')); priceRender(true); } });
+  box.append(own);
+}
+function rowEl(label, val, copyVal, cls) {
+  return h('div', { class: 'row ' + (cls || '') }, h('span', { text: label }), h('b', { text: val, 'data-copy': copyVal || '' }));
+}
+function priceInputs() {
+  const amt = parseDe($('#pr-amt').value);
+  let qty = parseDe($('#pr-qty').value); if (isNaN(qty) || qty <= 0) qty = 1;
+  return { amt, qty };
+}
+function priceRender(record, immediate) {
+  const out = $('#pr-out');
+  const { amt, qty } = priceInputs();
+  $('#pr-plus').classList.toggle('on', P.mode === 'plus'); $('#pr-minus').classList.toggle('on', P.mode === 'minus');
+  if (!P.mode || isNaN(amt) || amt < 0) { out.textContent = ''; out.append(h('div', { class: 'hint', text: isNaN(amt) ? 'Preis eingeben und oben eine Taste wählen.' : 'Oben „+ MwSt“ oder „− MwSt“ wählen.' })); return; }
+  const total = amt * qty;
+  const r = priceCalc(total, P.rate, P.mode);
+  out.textContent = '';
+  const rateTxt = fmtNum(P.rate, 2) + ' %';
+  const plus = P.mode === 'plus';
+  out.append(rowEl('Netto', money(r.net) + ' €', plain(r.net), plus ? '' : 'big'), rowEl('MwSt. (' + rateTxt + ')', money(r.tax) + ' €', plain(r.tax)), rowEl('Brutto', money(r.gross) + ' €', plain(r.gross), plus ? 'big' : ''));
+  if (qty !== 1) {
+    const u = priceCalc(amt, P.rate, P.mode);
+    out.append(rowEl('pro Stück netto', money(u.net) + ' €', plain(u.net)), rowEl('pro Stück brutto', money(u.gross) + ' €', plain(u.gross)));
+  }
+  if (record) {
+    const main = plus ? r.gross : r.net;
+    track({
+      type: 'price',
+      expr: (qty !== 1 ? fmtNum(qty, 4) + ' × ' : '') + money(amt) + ' € ' + (plus ? '+' : '−') + ' ' + rateTxt + ' MwSt.',
+      res: money(main) + ' € ' + (plus ? 'brutto' : 'netto'), value: main, copy: plain(main)
+    }, immediate);
+  }
+}
+$('#pr-plus').addEventListener('click', () => { P.mode = 'plus'; vib(); priceRender(true, true); });
+$('#pr-minus').addEventListener('click', () => { P.mode = 'minus'; vib(); priceRender(true, true); });
+$('#pr-amt').addEventListener('input', () => { priceRender(true); discRender(null); });
+$('#pr-qty').addEventListener('input', () => priceRender(true));
+let discKind = null;
+function discRender(kind, immediate) {
+  if (kind) discKind = kind;
+  const out = $('#pr-disc-out'); out.textContent = '';
+  const { amt, qty } = priceInputs(); const pct = parseDe($('#pr-pct').value);
+  $('#pr-disc').classList.toggle('on', discKind === 'disc'); $('#pr-surch').classList.toggle('on', discKind === 'surch');
+  if (!discKind || isNaN(amt) || isNaN(pct)) return;
+  const total = amt * qty; const r = discountCalc(total, pct, discKind);
+  const disc = discKind === 'disc';
+  out.append(rowEl(disc ? 'Endpreis' : 'Endpreis', money(r.final) + ' €', plain(r.final), 'big'), rowEl(disc ? 'Ersparnis' : 'Aufpreis', money(r.diff) + ' €', plain(r.diff)));
+  track({ type: 'price', expr: money(total) + ' € ' + (disc ? '−' : '+') + ' ' + fmtNum(pct, 2) + ' % ' + (disc ? 'Rabatt' : 'Aufschlag'), res: money(r.final) + ' €', value: r.final, copy: plain(r.final) }, immediate);
+}
+$('#pr-disc').addEventListener('click', () => { vib(); discRender('disc', true); });
+$('#pr-surch').addEventListener('click', () => { vib(); discRender('surch', true); });
+$('#pr-pct').addEventListener('input', () => discRender(null));
+priceChips();
+
+/* ===== Mehr ===== */
+function pctPair(a, b, outId, fn, exprFn, resFn) {
+  const run = () => {
+    const x = parseDe($(a).value), y = parseDe($(b).value), out = $(outId);
+    if (isNaN(x) || isNaN(y)) { out.textContent = '–'; out.dataset.copy = ''; return; }
+    try {
+      const v = fn(x, y);
+      out.textContent = resFn(v); out.dataset.copy = plain(v);
+      track({ type: 'extra', expr: exprFn(x, y), res: resFn(v), value: v, copy: plain(v) });
+    } catch (e) { out.textContent = e.message; out.dataset.copy = ''; }
+  };
+  $(a).addEventListener('input', run); $(b).addEventListener('input', run);
+}
+pctPair('#p1-x', '#p1-y', '#p1-out', pctOf, (x, y) => fmtCalc(x) + ' % von ' + fmtCalc(y), v => fmtCalc(v));
+pctPair('#p2-a', '#p2-b', '#p2-out', pctIs, (a, b) => fmtCalc(a) + ' ist wie viel % von ' + fmtCalc(b), v => fmtCalc(v) + ' %');
+pctPair('#p3-a', '#p3-b', '#p3-out', pctChange, (a, b) => 'Änderung ' + fmtCalc(a) + ' → ' + fmtCalc(b), v => (v > 0 ? '+' : '') + fmtCalc(v) + ' %');
+
+const T = { pct: 10, people: 1 };
+function tipChips() {
+  const box = $('#t-chips'); box.textContent = '';
+  [0, 5, 10, 15, 20].forEach(p => box.append(h('button', { class: 'chip' + (T.pct === p && !$('#t-pct').value ? ' on' : ''), type: 'button', text: p + ' %', onclick: () => { T.pct = p; $('#t-pct').value = ''; tipChips(); tipRender(); } })));
+}
+function tipRender() {
+  const amt = parseDe($('#t-amt').value); const out = $('#t-out');
+  $('#t-n').textContent = T.people;
+  if (isNaN(amt) || amt < 0) { out.textContent = ''; out.append(h('div', { class: 'hint', text: 'Betrag eingeben.' })); return; }
+  const r = tipCalc(amt, T.pct, T.people, $('#t-round').checked);
+  out.textContent = '';
+  out.append(rowEl('Trinkgeld (' + fmtNum(T.pct, 2) + ' %)', money(r.tip) + ' €', plain(r.tip)), rowEl('Gesamt', money(r.total) + ' €', plain(r.total)), rowEl(T.people > 1 ? 'Pro Person' : 'Zu zahlen', money(r.per) + ' €', plain(r.per), 'big'));
+  track({ type: 'extra', expr: money(amt) + ' € + ' + fmtNum(T.pct, 2) + ' % Trinkgeld, ' + T.people + ' Pers.', res: money(r.per) + ' € p. P.', value: r.per, copy: plain(r.per) });
+}
+$('#t-amt').addEventListener('input', tipRender);
+$('#t-pct').addEventListener('input', () => { const v = parseDe($('#t-pct').value); if (!isNaN(v) && v >= 0) { T.pct = v; tipChips(); tipRender(); } });
+$('#t-minus').addEventListener('click', () => { if (T.people > 1) { T.people--; tipRender(); } });
+$('#t-plus').addEventListener('click', () => { if (T.people < 99) { T.people++; tipRender(); } });
+$('#t-round').addEventListener('change', tipRender);
+tipChips();
+
+function unitFill() {
+  const cat = $('#u-cat').value, items = UNITS[cat].items;
+  [$('#u-from'), $('#u-to')].forEach((s, i) => { s.textContent = ''; items.forEach(it => s.append(h('option', { value: it[0], text: it[1] }))); s.selectedIndex = Math.min(i === 0 ? 0 : 1, items.length - 1); });
+  if (cat === 'len') { $('#u-from').value = 'km'; $('#u-to').value = 'mi'; }
+  if (cat === 'mass') { $('#u-from').value = 'kg'; $('#u-to').value = 'lb'; }
+  if (cat === 'temp') { $('#u-from').value = 'C'; $('#u-to').value = 'F'; }
+  unitRender(false);
+}
+function unitRender(record) {
+  const cat = $('#u-cat').value, v = parseDe($('#u-val').value), out = $('#u-out');
+  if (isNaN(v)) { out.textContent = '–'; out.dataset.copy = ''; return; }
+  const from = $('#u-from').value, to = $('#u-to').value;
+  const r = convertUnit(cat, v, from, to);
+  const short = k => { const n = UNITS[cat].items.find(i => i[0] === k)[1]; const m = n.match(/\(([^)]+)\)$/); return m ? m[1] : n; };
+  const resTxt = fmtCalc(r) + ' ' + short(to);
+  out.textContent = resTxt; out.dataset.copy = plain(r);
+  if (record) track({ type: 'extra', expr: fmtCalc(v) + ' ' + short(from) + ' → ' + short(to), res: resTxt, value: r, copy: plain(r) });
+}
+Object.keys(UNITS).forEach(k => $('#u-cat').append(h('option', { value: k, text: UNITS[k].name })));
+$('#u-cat').addEventListener('change', unitFill);
+$('#u-val').addEventListener('input', () => unitRender(true));
+$('#u-from').addEventListener('change', () => unitRender(true));
+$('#u-to').addEventListener('change', () => unitRender(true));
+$('#u-swap').addEventListener('click', () => { const a = $('#u-from').value; $('#u-from').value = $('#u-to').value; $('#u-to').value = a; vib(); unitRender(true); });
+unitFill();
+
+/* ===== Helfer-Verzeichnis & Navigation ===== */
+const HELPERS = [
+  { id: 'calc', g: 'Rechnen', ic: '🧮', label: 'Rechner', title: 'Rechner' },
+  { id: 'sci', g: 'Rechnen', ic: '𝑓', label: 'Wiss.', title: 'Wissenschaftlich' },
+  { id: 'pct', g: 'Rechnen', ic: '％', label: 'Prozent', title: 'Prozentrechner' },
+  { id: 'unit', g: 'Rechnen', ic: '📏', label: 'Einheiten', title: 'Einheiten' },
+  { id: 'ratio', g: 'Rechnen', ic: '⚖️', label: 'Dreisatz', title: 'Dreisatz' },
+  { id: 'base', g: 'Rechnen', ic: '💻', label: 'Zahlensys.', title: 'Zahlensysteme' },
+  { id: 'fx', g: 'Geld', ic: '💱', label: 'Währung', title: 'Währungsrechner' },
+  { id: 'price', g: 'Geld', ic: '🏷️', label: 'Preis', title: 'Preis & MwSt.' },
+  { id: 'tip', g: 'Geld', ic: '🍽️', label: 'Trinkgeld', title: 'Trinkgeld & Teilen' },
+  { id: 'uprice', g: 'Geld', ic: '🛒', label: 'Vergleich', title: 'Preisvergleich' },
+  { id: 'loan', g: 'Geld', ic: '🏦', label: 'Kredit', title: 'Kreditrechner' },
+  { id: 'save', g: 'Geld', ic: '🐷', label: 'Sparen', title: 'Sparrechner' },
+  { id: 'fuel', g: 'Geld', ic: '⛽', label: 'Sprit', title: 'Sprit & Fahrtkosten' },
+  { id: 'date', g: 'Alltag', ic: '📅', label: 'Datum', title: 'Datumsrechner' },
+  { id: 'work', g: 'Alltag', ic: '💼', label: 'Arbeitszeit', title: 'Arbeitszeit' },
+  { id: 'timer', g: 'Alltag', ic: '⏲️', label: 'Timer', title: 'Timer & Stoppuhr' },
+  { id: 'random', g: 'Alltag', ic: '🎲', label: 'Zufall', title: 'Zufall & Entscheider' },
+  { id: 'mix', g: 'Alltag', ic: '🧪', label: 'Mischung', title: 'Mischungsverhältnis' },
+  { id: 'list', g: 'Alltag', ic: '✅', label: 'Liste', title: 'Einkaufsliste' },
+  { id: 'notes', g: 'Alltag', ic: '📝', label: 'Notizen', title: 'Notizzettel' },
+  { id: 'hist', g: 'Alltag', ic: '🕘', label: 'Verlauf', title: 'Verlauf' }
+];
+const HELPER = {};
+HELPERS.forEach(x => { HELPER[x.id] = x; });
+/* ===== NEUER HELFER: Zinsrechner (Geldanlage) ===== */
+const ZFREQ = { d: 365, m: 12, q: 4, y: 1 };
+const ZLABEL = { d: 'Täglich', m: 'Monatlich', q: 'Vierteljährlich', y: 'Jährlich', s: 'Ausgezahlt (einfache Zinsen)' };
+function zinsYears(n, unit) { return unit === 'y' ? n : unit === 'm' ? n / 12 : n / 365; }
+function zinsCalc(P, ratePct, years, way) {
+  if (!(P > 0) || !(ratePct >= 0) || !(years > 0)) throw new Error('Bitte Betrag, Zins und Laufzeit prüfen');
+  if (years > 200) throw new Error('Laufzeit zu lang (maximal 200 Jahre)');
+  const r = ratePct / 100;
+  let end, apy;
+  if (way === 's') { end = P * (1 + r * years); apy = r; }
+  else { const m = ZFREQ[way]; end = P * Math.pow(1 + r / m, m * years); apy = Math.pow(1 + r / m, m) - 1; }
+  if (!isFinite(end)) throw new Error('Ergebnis zu groß');
+  return { end: end, interest: end - P, apy: apy };
+}
+const zEur = x => fmtNum(x, 2, true) + ' €';
+const zRaw = x => plain(round(x, 2));
+const zUnits = [['y', 'Jahre'], ['m', 'Monate'], ['d', 'Tage']];
+const zWays = [['m', 'Monatlich'], ['d', 'Täglich'], ['q', 'Vierteljährlich'], ['y', 'Jährlich'], ['s', 'Ausgezahlt']];
+const zDur = (t, u) => fmtNum(t) + ' ' + { y: 'J.', m: 'Mon.', d: 'Tage' }[u];
+
+HELPERS.push({ id: 'zins', g: 'Geld', ic: '📈', label: 'Zinsen', title: 'Zinsrechner' });
+HELPER.zins = HELPERS[HELPERS.length - 1];
+$('main').append(h('section', { class: 'panel', id: 'tab-zins' }));
+setTimeout(() => formTool('zins', [
+  {
+    key: 'one', label: 'Geldanlage', intro: 'Ich lege Geld bei der Bank an – was habe ich am Ende?',
+    fields: [
+      { key: 'p', label: 'Anlagebetrag (€)', type: 'num', value: '10000', half: true },
+      { key: 'z', label: 'Zins p. a. (%)', type: 'num', value: '3', half: true },
+      { key: 't', label: 'Laufzeit', type: 'num', value: '5', half: true },
+      { key: 'u', label: 'Einheit', type: 'select', options: zUnits, half: true },
+      { key: 'f', label: 'Zinsgutschrift (Ausgezahlt = ohne Zinseszins)', type: 'select', options: zWays },
+      { key: 'x', label: 'Steuer auf Zinsen (%, optional)', type: 'num', ph: 'z. B. 26,375' }
+    ],
+    compute: v => {
+      if (isNaN(v.p) || isNaN(v.z) || isNaN(v.t)) return null;
+      const yrs = zinsYears(v.t, v.u), r = zinsCalc(v.p, v.z, yrs, v.f);
+      const rows = [['Endbetrag', zEur(r.end), zRaw(r.end), 'big'], ['Zinsen gesamt', zEur(r.interest), zRaw(r.interest)]];
+      if (v.f !== 's') { const s = zinsCalc(v.p, v.z, yrs, 's'); rows.push(['davon Zinseszins', zEur(r.interest - s.interest), zRaw(r.interest - s.interest)]); }
+      rows.push(['Effektiver Jahreszins', fmtNum(r.apy * 100, 3) + ' %']);
+      if (!isNaN(v.x) && v.x > 0) {
+        const tax = r.interest * v.x / 100;
+        rows.push(['Steuer (' + fmtNum(v.x, 3) + ' % der Zinsen)', '− ' + zEur(tax), zRaw(tax)], ['Endbetrag nach Steuer', zEur(r.end - tax), zRaw(r.end - tax)]);
+      }
+      return { rows: rows, hist: { expr: zEur(v.p) + ' · ' + fmtNum(v.z, 3) + ' % · ' + zDur(v.t, v.u) + ' · ' + ZLABEL[v.f], res: zEur(r.end), value: round(r.end, 2), copy: zRaw(r.end) } };
+    }
+  },
+  {
+    key: 'freq', label: 'Gutschrift', intro: 'Gleicher Zins, andere Gutschrift: Was bringt täglich, monatlich oder jährlich – und was ohne Zinseszins?',
+    fields: [
+      { key: 'p', label: 'Anlagebetrag (€)', type: 'num', value: '10000', half: true },
+      { key: 'z', label: 'Zins p. a. (%)', type: 'num', value: '3', half: true },
+      { key: 't', label: 'Laufzeit', type: 'num', value: '10', half: true },
+      { key: 'u', label: 'Einheit', type: 'select', options: zUnits, half: true }
+    ],
+    compute: v => {
+      if (isNaN(v.p) || isNaN(v.z) || isNaN(v.t)) return null;
+      const yrs = zinsYears(v.t, v.u), res = {};
+      ['d', 'm', 'q', 'y', 's'].forEach(k => { res[k] = zinsCalc(v.p, v.z, yrs, k); });
+      const rows = ['d', 'm', 'q', 'y', 's'].map((k, i) => [ZLABEL[k], zEur(res[k].end), zRaw(res[k].end), i === 0 ? 'big' : '']);
+      const gain = res.d.end - res.y.end;
+      rows.push(['Täglich statt jährlich', '+ ' + zEur(gain), zRaw(gain)], ['Zinseszins-Effekt (täglich)', '+ ' + zEur(res.d.end - res.s.end), zRaw(res.d.end - res.s.end)]);
+      return { rows: rows, hist: { expr: 'Gutschrift: ' + zEur(v.p) + ' · ' + fmtNum(v.z, 3) + ' % · ' + zDur(v.t, v.u), res: 'täglich ' + zEur(res.d.end), value: round(res.d.end, 2), copy: zRaw(res.d.end) } };
+    }
+  },
+  {
+    key: 'cmp', label: '2 Angebote', intro: 'Zwei Bankangebote mit gleichem Betrag und gleicher Laufzeit vergleichen. „Ausgezahlt“ = Zinsen werden ausgezahlt, ohne Zinseszins.',
+    fields: [
+      { key: 'p', label: 'Anlagebetrag (€)', type: 'num', value: '10000', half: true },
+      { key: 't', label: 'Laufzeit', type: 'num', value: '5', half: true },
+      { key: 'u', label: 'Einheit', type: 'select', options: zUnits },
+      { key: 'za', label: 'Angebot A: Zins (%)', type: 'num', value: '3', half: true },
+      { key: 'fa', label: 'A: Gutschrift', type: 'select', options: zWays, half: true },
+      { key: 'zb', label: 'Angebot B: Zins (%)', type: 'num', value: '3,1', half: true },
+      { key: 'fb', label: 'B: Gutschrift', type: 'select', options: zWays, half: true }
+    ],
+    compute: v => {
+      if (isNaN(v.p) || isNaN(v.t) || isNaN(v.za) || isNaN(v.zb)) return null;
+      const yrs = zinsYears(v.t, v.u), a = zinsCalc(v.p, v.za, yrs, v.fa), b = zinsCalc(v.p, v.zb, yrs, v.fb);
+      const diff = b.end - a.end, tie = Math.abs(diff) < 0.005;
+      const winner = tie ? 'Gleich gut' : (diff > 0 ? 'Angebot B' : 'Angebot A') + ' (+ ' + zEur(Math.abs(diff)) + ')';
+      return {
+        rows: [['Besser', winner, winner, 'big'],
+          ['A: Endbetrag', zEur(a.end), zRaw(a.end)], ['B: Endbetrag', zEur(b.end), zRaw(b.end)],
+          ['A: Zinsen', zEur(a.interest), zRaw(a.interest)], ['B: Zinsen', zEur(b.interest), zRaw(b.interest)],
+          ['A: Effektiver Jahreszins', fmtNum(a.apy * 100, 3) + ' %'], ['B: Effektiver Jahreszins', fmtNum(b.apy * 100, 3) + ' %']],
+        hist: { expr: 'A ' + fmtNum(v.za, 3) + ' % ' + ZLABEL[v.fa].toLowerCase() + ' vs. B ' + fmtNum(v.zb, 3) + ' % ' + ZLABEL[v.fb].toLowerCase(), res: tie ? 'Gleich gut' : (diff > 0 ? 'B' : 'A') + ' besser: + ' + zEur(Math.abs(diff)), value: round(Math.abs(diff), 2), copy: zRaw(Math.abs(diff)) }
+      };
+    }
+  }
+]), 0);
+/* ===== ENDE Zinsrechner ===== */
+
+
+const DEFAULT_BAR = ['calc', 'sci', 'fx', 'price', 'hist'];
+if (!S.tools || typeof S.tools !== 'object') S.tools = {};
+if (!Array.isArray(S.list)) S.list = [];
+if (typeof S.notes !== 'string') S.notes = '';
+if (!S.timer || typeof S.timer.total !== 'number') S.timer = { total: 300000, left: 300000, end: null, done: false };
+S.bar = barNormalize(S.bar, HELPERS.map(x => x.id), DEFAULT_BAR);
+let activeTab = 'calc', editMode = false;
+
+['date', 'work', 'mix', 'timer', 'random', 'loan', 'save', 'fuel', 'ratio', 'uprice', 'base', 'list', 'notes', 'all'].forEach(id => {
+  if (!$('#tab-' + id)) $('main').append(h('section', { class: 'panel', id: 'tab-' + id }));
+});
+
+function renderTabbar() {
+  const nav = $('#tabbar'); nav.textContent = '';
+  S.bar.filter(Boolean).forEach(id => {
+    const x = HELPER[id];
+    nav.append(h('button', { type: 'button', 'data-tab': id, class: id === activeTab ? 'on' : '', onclick: () => { vib(); switchTab(id); } }, h('span', { class: 'ic', text: x.ic }), x.label));
+  });
+  const allOn = activeTab === 'all' || S.bar.indexOf(activeTab) < 0;
+  nav.append(h('button', { type: 'button', 'data-tab': 'all', class: allOn ? 'on' : '', onclick: () => { vib(); switchTab('all'); } }, h('span', { class: 'ic', text: '⊞' }), 'Alle'));
+}
+function switchTab(t) {
+  flush();
+  activeTab = t;
+  if (t !== 'all') editMode = false;
+  $$('.panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + t));
+  $('#title').textContent = t === 'all' ? (editMode ? 'Leiste anpassen' : 'Alle Helfer') : HELPER[t].title;
+  renderTabbar();
+  if (t === 'hist') renderHistory();
+  if (t === 'calc') classic.render();
+  if (t === 'sci') sci.render();
+  if (t === 'all') renderLauncher();
+  const act = $('#tab-' + t); if (act) act.scrollTop = 0;
+}
+
+/* --- Übersicht aller Helfer + Leiste per Ziehen belegen --- */
+function renderLauncher() {
+  const root = $('#tab-all'); root.textContent = '';
+  $('#title').textContent = editMode ? 'Leiste anpassen' : 'Alle Helfer';
+  root.append(h('div', { class: 'row-flex', style: 'justify-content:space-between;margin:2px 2px 4px' },
+    h('div', { class: 'hint', style: 'margin:0;flex:1', text: editMode ? 'Ziehe das Symbol ⠿ eines Helfers auf einen Platz. Antippen legt ihn auf den ersten freien Platz.' : 'Tippe auf einen Helfer, um ihn zu öffnen.' }),
+    h('button', { class: 'btn sm' + (editMode ? '' : ' alt'), style: 'flex:0 0 auto;margin-left:10px', text: editMode ? 'Fertig' : 'Leiste anpassen', onclick: () => { editMode = !editMode; renderLauncher(); renderTabbar(); } })));
+  if (editMode) {
+    const slots = h('div', { class: 'slots' });
+    S.bar.forEach((id, i) => {
+      const el = h('div', { class: 'slot' + (id ? ' full' : ''), 'data-i': i });
+      if (id) {
+        el.append(h('span', { class: 'ic', text: HELPER[id].ic }), HELPER[id].label,
+          h('button', { class: 'x', type: 'button', 'aria-label': 'Entfernen', text: '✕', onclick: ev => { ev.stopPropagation(); S.bar = barRemove(S.bar, i); save(); renderLauncher(); renderTabbar(); } }));
+        el.addEventListener('pointerdown', ev => dragStart(ev, id));
+      } else el.append(h('span', { class: 'ic', text: '＋' }), 'frei');
+      slots.append(el);
+    });
+    root.append(h('div', { class: 'editbar' }, slots));
+  }
+  ['Rechnen', 'Geld', 'Alltag'].forEach(g => {
+    root.append(h('div', { class: 'grp', text: g.toUpperCase() }));
+    const grid = h('div', { class: 'launch' });
+    HELPERS.filter(x => x.g === g).forEach(x => {
+      const inBar = S.bar.indexOf(x.id) >= 0;
+      const tile = h('button', { type: 'button', class: 'tile' + (inBar ? ' inbar' : '') }, h('span', { class: 'ic', text: x.ic }), x.label);
+      if (inBar) tile.append(h('span', { class: 'pin', text: '✓' }));
+      if (editMode) {
+        const grip = h('span', { class: 'grip', text: '⠿', 'aria-label': 'Ziehen' });
+        grip.addEventListener('pointerdown', ev => dragStart(ev, x.id));
+        tile.append(grip);
+        tile.addEventListener('click', () => {
+          if (justDragged) return;
+          const nb = barAdd(S.bar, x.id);
+          if (nb) { S.bar = nb; save(); renderLauncher(); renderTabbar(); vib(); }
+          else toast(inBar ? 'Ist schon in der Leiste' : 'Leiste voll – ziehe den Helfer auf einen Platz');
+        });
+      } else tile.addEventListener('click', () => { vib(); switchTab(x.id); });
+      grid.append(tile);
+    });
+    root.append(grid);
+  }
+  );
+  if (editMode) root.append(h('button', { class: 'btn alt sm', style: 'width:100%;margin-top:16px', text: 'Standard-Leiste wiederherstellen', onclick: () => { S.bar = barNormalize(null, HELPERS.map(x => x.id), DEFAULT_BAR); save(); renderLauncher(); renderTabbar(); } }));
+}
+let drag = null, justDragged = false;
+function slotAt(x, y) { const t = document.elementFromPoint(x, y); return t && t.closest ? t.closest('.slot') : null; }
+function dragStart(ev, id) {
+  const hit = document.elementFromPoint(ev.clientX, ev.clientY);
+  if (hit && hit.closest && hit.closest('.x')) return;
+  if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+  const el = ev.currentTarget;
+  drag = { id: id, el: el, pid: ev.pointerId, sx: ev.clientX, sy: ev.clientY, moved: false, ghost: null, over: null };
+  el.addEventListener('pointermove', dragMove);
+  el.addEventListener('pointerup', dragEnd);
+  el.addEventListener('pointercancel', dragEnd);
+}
+function dragMove(ev) {
+  if (!drag || ev.pointerId !== drag.pid) return;
+  if (!drag.moved) {
+    if (Math.hypot(ev.clientX - drag.sx, ev.clientY - drag.sy) < 8) return;
+    drag.moved = true;
+    try { drag.el.setPointerCapture(ev.pointerId); } catch (e) { }
+    drag.ghost = h('div', { class: 'ghost', text: HELPER[drag.id].ic });
+    document.body.append(drag.ghost);
+  }
+  if (ev.cancelable) ev.preventDefault();
+  drag.ghost.style.left = ev.clientX + 'px'; drag.ghost.style.top = ev.clientY + 'px';
+  const s = slotAt(ev.clientX, ev.clientY);
+  if (drag.over && drag.over !== s) drag.over.classList.remove('over');
+  if (s) s.classList.add('over');
+  drag.over = s;
+}
+function dragEnd(ev) {
+  if (!drag || ev.pointerId !== drag.pid) return;
+  const d = drag; drag = null;
+  d.el.removeEventListener('pointermove', dragMove);
+  d.el.removeEventListener('pointerup', dragEnd);
+  d.el.removeEventListener('pointercancel', dragEnd);
+  if (d.ghost) d.ghost.remove();
+  if (d.over) d.over.classList.remove('over');
+  if (!d.moved) return;
+  justDragged = true; setTimeout(() => { justDragged = false; }, 60);
+  if (ev.type === 'pointercancel') { renderLauncher(); return; }
+  const s = slotAt(ev.clientX, ev.clientY);
+  if (s) S.bar = barPlace(S.bar, d.id, +s.dataset.i);
+  else if (d.el.classList.contains('slot')) S.bar = barRemove(S.bar, S.bar.indexOf(d.id));
+  save(); renderLauncher(); renderTabbar(); vib();
+}
+
+/* ===== Formular-Helfer (Datum, Arbeitszeit, Kredit, Sparen, Sprit, Dreisatz, Vergleich, Zahlensysteme) ===== */
+const todayISO = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); };
+function formTool(id, modes) {
+  const root = $('#tab-' + id);
+  const body = h('div');
+  let seg = null;
+  if (modes.length > 1) {
+    seg = h('div', { class: 'seg' });
+    modes.forEach(m => seg.append(h('button', { type: 'button', 'data-k': m.key, text: m.label, onclick: () => { flush(); build(m); } })));
+    root.append(seg);
+  }
+  root.append(body);
+  function build(m) {
+    if (seg) Array.from(seg.children).forEach(b => b.classList.toggle('on', b.dataset.k === m.key));
+    S.tools['_' + id] = m.key;
+    body.textContent = '';
+    const skey = id + ':' + m.key;
+    const store = S.tools[skey] || (S.tools[skey] = {});
+    const card = h('div', { class: 'card' });
+    if (m.intro) card.append(h('p', { class: 'hint', style: 'margin-top:0', text: m.intro }));
+    const grid = h('div', { class: 'fgrid' });
+    const els = {};
+    m.fields.forEach(f => {
+      if (f.type === 'chips') {
+        grid.append(h('div', { style: 'grid-column:1/-1' }, h('div', { class: 'chips', style: 'margin:0' }, f.values.map(v => h('button', { type: 'button', class: 'chip', text: '1:' + v, onclick: () => { els[f.target].value = v; run(true); } })))));
+        return;
+      }
+      let el;
+      if (f.type === 'select') {
+        el = h('select', { class: 'inp' });
+        f.options.forEach(o => el.append(h('option', { value: o[0], text: o[1] })));
+      } else {
+        el = h('input', { class: 'inp', type: f.type === 'date' ? 'date' : f.type === 'time' ? 'time' : 'text', autocomplete: 'off' });
+        if (f.type === 'num') el.setAttribute('inputmode', 'decimal');
+        if (f.ph) el.setAttribute('placeholder', f.ph);
+      }
+      let val = store[f.key];
+      if (val === undefined) val = f.value === 'today' ? todayISO() : (f.value === undefined ? '' : f.value);
+      el.value = val;
+      if (f.type === 'select' && el.selectedIndex < 0) el.selectedIndex = 0;
+      el.addEventListener(f.type === 'select' ? 'change' : 'input', () => run(true));
+      els[f.key] = el;
+      grid.append(h('div', { style: f.half ? '' : 'grid-column:1/-1' }, h('label', { class: 'lbl', text: f.label }), el));
+    });
+    card.append(grid);
+    const out = h('div', { class: 'rows' });
+    body.append(card, h('div', { class: 'card' }, out));
+    function run(record) {
+      const vals = {};
+      m.fields.forEach(f => { if (f.type === 'chips') return; const raw = els[f.key].value; store[f.key] = raw; vals[f.key] = f.type === 'num' ? parseDe(raw) : raw; });
+      save();
+      out.textContent = '';
+      let r;
+      try { r = m.compute(vals); } catch (e) { out.append(h('div', { class: 'hint', style: 'color:var(--danger)', text: e.message })); return; }
+      if (!r) { out.append(h('div', { class: 'hint', text: m.empty || 'Werte eingeben.' })); return; }
+      r.rows.forEach(x => out.append(rowEl(x[0], x[1], x[2] || x[1], x[3])));
+      if (record && r.hist) track({ type: 'extra', expr: r.hist.expr, res: r.hist.res, value: r.hist.value, copy: r.hist.copy });
+    }
+    run(false);
+  }
+  const last = S.tools['_' + id];
+  build(modes.find(m => m.key === last) || modes[0]);
+}
+const E = x => fmtNum(x, 2, true);
+
+formTool('date', [
+  {
+    key: 'span', label: 'Zeitraum', intro: 'Wie viele Tage liegen zwischen zwei Daten?',
+    fields: [{ key: 'a', label: 'Von', type: 'date', value: 'today', half: true }, { key: 'b', label: 'Bis', type: 'date', value: 'today', half: true }],
+    compute: v => {
+      const a = parseISO(v.a), b = parseISO(v.b); if (a === null || b === null) return null;
+      const lo = Math.min(a, b), hi = Math.max(a, b), days = daysBetween(lo, hi), p = ymd(lo, hi);
+      return {
+        rows: [[b < a ? 'Tage (Ende liegt vor Start)' : 'Tage', fmtNum(days, 0), String(days), 'big'],
+          ['Wochen', Math.floor(days / 7) + ' W. ' + (days % 7) + ' T.'],
+          ['Jahre, Monate, Tage', p.y + ' J. ' + p.m + ' M. ' + p.d + ' T.'],
+          ['Werktage Mo–Fr (inkl. Start/Ende)', fmtNum(workdays(lo, hi), 0)]],
+        hist: { expr: fmtDate(a) + ' → ' + fmtDate(b), res: fmtNum(days, 0) + ' Tage', value: days, copy: String(days) }
+      };
+    }
+  },
+  {
+    key: 'add', label: 'Datum ± Zeit', intro: 'Welches Datum ist in X Tagen, Wochen, Monaten oder Jahren?',
+    fields: [{ key: 'a', label: 'Startdatum', type: 'date', value: 'today' },
+      { key: 'n', label: 'Anzahl (negativ = zurück)', type: 'num', ph: 'z. B. 30', half: true },
+      { key: 'u', label: 'Einheit', type: 'select', options: [['d', 'Tage'], ['w', 'Wochen'], ['m', 'Monate'], ['y', 'Jahre']], half: true }],
+    compute: v => {
+      const a = parseISO(v.a); if (a === null || isNaN(v.n)) return null;
+      const n = Math.round(v.n); if (Math.abs(n) > 100000) throw new Error('Die Zahl ist zu groß');
+      const t = v.u === 'd' ? a + n * DAY : v.u === 'w' ? a + n * 7 * DAY : addMonths(a, v.u === 'm' ? n : n * 12);
+      if (!isFinite(t) || isNaN(new Date(t).getTime())) throw new Error('Datum außerhalb des gültigen Bereichs');
+      const label = WEEKDAYS[new Date(t).getUTCDay()] + ', ' + fmtDate(t);
+      return {
+        rows: [['Ergebnis', label, fmtDate(t), 'big'], ['Kalenderwoche', String(isoWeek(t))], ['ISO-Format', toISO(t)]],
+        hist: { expr: fmtDate(a) + (n < 0 ? ' − ' : ' + ') + Math.abs(n) + ' ' + { d: 'Tage', w: 'Wochen', m: 'Monate', y: 'Jahre' }[v.u], res: fmtDate(t), copy: fmtDate(t) }
+      };
+    }
+  },
+  {
+    key: 'age', label: 'Alter', intro: 'Alter und nächster Geburtstag.',
+    fields: [{ key: 'b', label: 'Geburtsdatum', type: 'date', value: '', half: true }, { key: 'r', label: 'Stichtag', type: 'date', value: 'today', half: true }],
+    compute: v => {
+      const b = parseISO(v.b), r = parseISO(v.r); if (b === null || r === null) return null;
+      if (r < b) throw new Error('Der Stichtag liegt vor dem Geburtsdatum');
+      const p = ymd(b, r), B = new Date(b), ry = new Date(r).getUTCFullYear();
+      let nb = Date.UTC(ry, B.getUTCMonth(), B.getUTCDate()); if (nb < r) nb = Date.UTC(ry + 1, B.getUTCMonth(), B.getUTCDate());
+      const until = daysBetween(r, nb);
+      return {
+        rows: [['Alter', p.y + ' Jahre', p.y + '', 'big'], ['Genau', p.y + ' J. ' + p.m + ' M. ' + p.d + ' T.'], ['Tage gelebt', fmtNum(daysBetween(b, r), 0)],
+          ['Nächster Geburtstag', WEEKDAYS[new Date(nb).getUTCDay()].slice(0, 2) + ', ' + fmtDate(nb) + (until === 0 ? ' (heute!)' : ' (in ' + until + ' T.)')]],
+        hist: { expr: 'Alter am ' + fmtDate(r) + ' (geb. ' + fmtDate(b) + ')', res: p.y + ' Jahre', value: p.y, copy: String(p.y) }
+      };
+    }
+  }
+]);
+
+formTool('work', [{
+  key: 'w', intro: 'Arbeitszeit aus Beginn, Ende und Pause. Über Mitternacht wird erkannt.',
+  fields: [{ key: 's', label: 'Beginn', type: 'time', value: '08:00', half: true }, { key: 'e', label: 'Ende', type: 'time', value: '16:30', half: true },
+    { key: 'p', label: 'Pause (Minuten)', type: 'num', value: '30', half: true }, { key: 'r', label: 'Stundenlohn € (optional)', type: 'num', half: true }],
+  compute: v => {
+    const s = parseHM(v.s), e = parseHM(v.e); if (s === null || e === null) return null;
+    const m = workMinutes(s, e, isNaN(v.p) ? 0 : v.p), dec = m / 60;
+    const rows = [['Arbeitszeit', fmtHM(m) + ' h', fmtHM(m), 'big'], ['Dezimal', fmtNum(dec, 2) + ' h', plain(round(dec, 2))]];
+    if (!isNaN(v.r)) rows.push(['Verdienst', E(dec * v.r) + ' €', plain(round(dec * v.r, 2))]);
+    return { rows: rows, hist: { expr: v.s + ' – ' + v.e + ', Pause ' + (isNaN(v.p) ? 0 : fmtNum(v.p, 0)) + ' min', res: fmtHM(m) + ' h', value: round(dec, 2), copy: plain(round(dec, 2)) } };
+  }
+}]);
+
+formTool('loan', [{
+  key: 'l', intro: 'Monatliche Rate eines Annuitätendarlehens (gleichbleibende Rate).',
+  fields: [{ key: 'p', label: 'Darlehen (€)', type: 'num', ph: '10000' }, { key: 'z', label: 'Zins p. a. (%)', type: 'num', ph: '5', half: true }, { key: 'y', label: 'Laufzeit (Jahre)', type: 'num', ph: '5', half: true }],
+  compute: v => {
+    if (isNaN(v.p) || isNaN(v.z) || isNaN(v.y)) return null;
+    const r = loanCalc(v.p, v.z, v.y);
+    return {
+      rows: [['Monatliche Rate', E(r.monthly) + ' €', plain(round(r.monthly, 2)), 'big'], ['Gesamtzahlung', E(r.total) + ' €', plain(round(r.total, 2))], ['Zinsen gesamt', E(r.interest) + ' €', plain(round(r.interest, 2))], ['Anzahl Raten', fmtNum(r.n, 0)]],
+      hist: { expr: 'Kredit ' + E(v.p) + ' € · ' + fmtNum(v.z, 2) + ' % · ' + fmtNum(v.y, 2) + ' J.', res: E(r.monthly) + ' € / Monat', value: round(r.monthly, 2), copy: plain(round(r.monthly, 2)) }
+    };
+  }
+}]);
+
+formTool('save', [{
+  key: 's', intro: 'Wie viel Geld ist es am Ende? Zinsen werden monatlich gutgeschrieben, Sparrate am Monatsende.',
+  fields: [{ key: 'a', label: 'Startkapital (€)', type: 'num', value: '0', half: true }, { key: 'm', label: 'Sparrate pro Monat (€)', type: 'num', half: true },
+    { key: 'z', label: 'Zins p. a. (%)', type: 'num', half: true }, { key: 'y', label: 'Dauer (Jahre)', type: 'num', half: true }],
+  compute: v => {
+    if (isNaN(v.z) || isNaN(v.y)) return null;
+    const s = isNaN(v.a) ? 0 : v.a, m = isNaN(v.m) ? 0 : v.m;
+    const r = savingsCalc(s, m, v.z, v.y);
+    return {
+      rows: [['Endkapital', E(r.end) + ' €', plain(round(r.end, 2)), 'big'], ['Eingezahlt', E(r.paid) + ' €', plain(round(r.paid, 2))], ['Zinsertrag', E(r.gain) + ' €', plain(round(r.gain, 2))]],
+      hist: { expr: 'Sparen ' + E(m) + ' €/Monat · ' + fmtNum(v.z, 2) + ' % · ' + fmtNum(v.y, 2) + ' J.', res: E(r.end) + ' €', value: round(r.end, 2), copy: plain(round(r.end, 2)) }
+    };
+  }
+}]);
+
+formTool('fuel', [
+  {
+    key: 'cost', label: 'Fahrtkosten', intro: 'Was kostet eine Fahrt?',
+    fields: [{ key: 'k', label: 'Strecke (km)', type: 'num', half: true }, { key: 'c', label: 'Verbrauch (l/100 km)', type: 'num', ph: '6,5', half: true }, { key: 'p', label: 'Preis pro Liter (€)', type: 'num', ph: '1,80' }],
+    compute: v => {
+      if (isNaN(v.k) || isNaN(v.c)) return null;
+      const r = fuelCalc(v.k, v.c, isNaN(v.p) ? 0 : v.p);
+      const rows = [['Benötigter Kraftstoff', fmtNum(r.liters, 2) + ' l', plain(round(r.liters, 2))]];
+      if (!isNaN(v.p)) rows.unshift(['Kosten', E(r.cost) + ' €', plain(round(r.cost, 2)), 'big']);
+      if (!isNaN(v.p)) rows.push(['Kosten pro 100 km', E(v.c * v.p) + ' €', plain(round(v.c * v.p, 2))]);
+      return { rows: rows, hist: { expr: fmtNum(v.k, 1) + ' km · ' + fmtNum(v.c, 2) + ' l/100 km', res: isNaN(v.p) ? fmtNum(r.liters, 2) + ' l' : E(r.cost) + ' €', value: round(isNaN(v.p) ? r.liters : r.cost, 2), copy: plain(round(isNaN(v.p) ? r.liters : r.cost, 2)) } };
+    }
+  },
+  {
+    key: 'cons', label: 'Verbrauch', intro: 'Verbrauch aus der letzten Tankfüllung.',
+    fields: [{ key: 'k', label: 'Gefahrene km', type: 'num', half: true }, { key: 'l', label: 'Getankte Liter', type: 'num', half: true }, { key: 'p', label: 'Preis pro Liter (€, optional)', type: 'num' }],
+    compute: v => {
+      if (isNaN(v.k) || isNaN(v.l)) return null;
+      const c = consumption(v.k, v.l);
+      const rows = [['Verbrauch', fmtNum(c, 2) + ' l/100 km', plain(round(c, 2)), 'big']];
+      if (!isNaN(v.p)) { rows.push(['Kosten pro 100 km', E(c * v.p) + ' €', plain(round(c * v.p, 2))]); rows.push(['Kosten pro km', fmtNum(c * v.p / 100, 3) + ' €']); }
+      return { rows: rows, hist: { expr: fmtNum(v.l, 2) + ' l auf ' + fmtNum(v.k, 1) + ' km', res: fmtNum(c, 2) + ' l/100 km', value: round(c, 2), copy: plain(round(c, 2)) } };
+    }
+  }
+]);
+
+formTool('ratio', [{
+  key: 'r', intro: 'Beispiel: 3 kg kosten 7,50 € – was kosten 5 kg? → A = 3, B = 7,5, C = 5.',
+  fields: [{ key: 't', label: 'Art', type: 'select', options: [['p', 'Je mehr, desto mehr (proportional)'], ['i', 'Je mehr, desto weniger (umgekehrt)']] },
+    { key: 'a', label: 'A', type: 'num', half: true }, { key: 'b', label: 'gehört zu B', type: 'num', half: true }, { key: 'c', label: 'Dann gehört zu C …', type: 'num' }],
+  compute: v => {
+    if (isNaN(v.a) || isNaN(v.b) || isNaN(v.c)) return null;
+    const x = ratioCalc(v.a, v.b, v.c, v.t === 'i');
+    return { rows: [['Ergebnis', fmtNum(x, 6), plain(x), 'big']], hist: { expr: fmtNum(v.a) + ' → ' + fmtNum(v.b) + ' ⇒ ' + fmtNum(v.c) + ' → ?' + (v.t === 'i' ? ' (umgekehrt)' : ''), res: fmtNum(x, 6), value: x, copy: plain(x) } };
+  }
+}]);
+
+const UPU = { g: [1000, 'kg'], kg: [1, 'kg'], ml: [1000, 'l'], l: [1, 'l'], st: [1, 'Stück'] };
+formTool('uprice', [{
+  key: 'u', intro: 'Welche Packung ist günstiger? Beide Mengen in derselben Einheit eingeben.',
+  fields: [{ key: 'u', label: 'Einheit der Menge', type: 'select', options: [['g', 'Gramm (g)'], ['kg', 'Kilogramm (kg)'], ['ml', 'Milliliter (ml)'], ['l', 'Liter (l)'], ['st', 'Stück']] },
+    { key: 'a1', label: 'Preis A (€)', type: 'num', half: true }, { key: 'a2', label: 'Menge A', type: 'num', half: true },
+    { key: 'b1', label: 'Preis B (€)', type: 'num', half: true }, { key: 'b2', label: 'Menge B', type: 'num', half: true }],
+  compute: v => {
+    if (isNaN(v.a1) || isNaN(v.a2) || isNaN(v.b1) || isNaN(v.b2)) return null;
+    const f = UPU[v.u], pa = unitPrice(v.a1, v.a2, f[0]), pb = unitPrice(v.b1, v.b2, f[0]);
+    const lo = Math.min(pa, pb), hi = Math.max(pa, pb);
+    const win = pa === pb ? 'Gleich teuer' : (pa < pb ? 'Produkt A' : 'Produkt B') + ' (' + fmtNum((1 - lo / hi) * 100, 1) + ' % günstiger)';
+    return {
+      rows: [['Günstiger', win, win, 'big'], ['A pro ' + f[1], E(pa) + ' €', plain(round(pa, 2))], ['B pro ' + f[1], E(pb) + ' €', plain(round(pb, 2))]],
+      hist: { expr: 'A ' + E(v.a1) + ' € / ' + fmtNum(v.a2) + ' · B ' + E(v.b1) + ' € / ' + fmtNum(v.b2), res: pa === pb ? 'Gleich teuer' : (pa < pb ? 'A' : 'B') + ' ist günstiger', copy: win }
+    };
+  }
+}]);
+
+formTool('base', [{
+  key: 'b', intro: 'Zahlen zwischen Dezimal, Hexadezimal, Binär und Oktal umrechnen.',
+  fields: [{ key: 'n', label: 'Zahl', type: 'text', ph: 'z. B. 255 oder FF' }, { key: 'b', label: 'Eingabe ist …', type: 'select', options: [['10', 'Dezimal'], ['16', 'Hexadezimal'], ['2', 'Binär'], ['8', 'Oktal']] }],
+  compute: v => {
+    if (!String(v.n).trim()) return null;
+    const n = fromBase(v.n, +v.b);
+    return {
+      rows: [['Dezimal', fmtNum(n, 0), String(n)], ['Hexadezimal', toBase(n, 16), toBase(n, 16)], ['Binär', toBase(n, 2).replace(/\B(?=(\d{4})+(?!\d))/g, ' '), toBase(n, 2)], ['Oktal', toBase(n, 8), toBase(n, 8)]],
+      hist: { expr: String(v.n).trim() + ' (Basis ' + v.b + ')', res: fmtNum(n, 0) + ' dez.', value: n, copy: String(n) }
+    };
+  }
+}]);
+
+const fmtVol = ml => ml >= 1000 ? fmtNum(ml / 1000, 2) + ' l' : fmtNum(ml, 1) + ' ml';
+const mixFields = (amountLabel) => [
+  { type: 'chips', target: 'x', values: [5, 10, 20, 50, 100] },
+  { key: 'x', label: 'Verhältnis 1 : …', type: 'num', value: '20', half: true },
+  { key: 'a', label: amountLabel, type: 'num', ph: 'z. B. 5', half: true },
+  { key: 'u', label: 'Einheit der Menge', type: 'select', options: [['l', 'Liter'], ['ml', 'Milliliter']], half: true },
+  { key: 'm', label: '„1 : X“ bedeutet', type: 'select', options: [['a', '1 Teil Mittel + X Teile Wasser'], ['b', 'insgesamt X Teile']], half: true }
+];
+const mixCompute = mode => v => {
+  if (isNaN(v.x) || isNaN(v.a)) return null;
+  const ml = v.a * (v.u === 'l' ? 1000 : 1);
+  const r = mixCalc(v.x, mode, ml, v.m === 'b');
+  const rows = mode === 'conc'
+    ? [['Wasser', fmtVol(r.water), plain(round(r.water, 1)), 'big'], ['Mittel', fmtVol(r.conc), plain(round(r.conc, 1))]]
+    : [['Mittel', fmtVol(r.conc), plain(round(r.conc, 1)), 'big'], ['Wasser', fmtVol(r.water), plain(round(r.water, 1))]];
+  rows.push(['Fertige Mischung', fmtVol(r.total), plain(round(r.total, 1))]);
+  if (r.conc <= 300) rows.push(['Mittel in Löffeln', fmtNum(r.conc / 15, 1) + ' EL · ' + fmtNum(r.conc / 5, 1) + ' TL', fmtNum(r.conc / 15, 1) + ' EL']);
+  const what = mode === 'water' ? fmtVol(ml) + ' Wasser' : mode === 'total' ? fmtVol(ml) + ' Mischung' : fmtVol(ml) + ' Mittel';
+  const res = mode === 'conc' ? 'Wasser: ' + fmtVol(r.water) : 'Mittel: ' + fmtVol(r.conc);
+  return { rows: rows, hist: { expr: '1:' + fmtNum(v.x) + ' · ' + what, res: res, value: round(mode === 'conc' ? r.water : r.conc, 1), copy: plain(round(mode === 'conc' ? r.water : r.conc, 1)) } };
+};
+formTool('mix', [
+  { key: 'water', label: 'Wasser da', intro: 'Wie viel Mittel kommt in mein Wasser? Beispiel: 1:20 bei 5 Litern Wasser.', fields: mixFields('Wassermenge'), compute: mixCompute('water') },
+  { key: 'total', label: 'Gesamtmenge', intro: 'Ich will eine bestimmte Menge fertige Mischung ansetzen.', fields: mixFields('Gewünschte Gesamtmenge'), compute: mixCompute('total') },
+  { key: 'conc', label: 'Mittel da', intro: 'Ich habe eine bestimmte Menge Mittel – wie viel Wasser dazu?', fields: mixFields('Menge Mittel'), compute: mixCompute('conc') }
+]);
+
+/* ===== Zufall & Entscheider ===== */
+(function buildRandom() {
+  const root = $('#tab-random');
+  const out = h('div', { class: 'rnd-out', text: '🎲' });
+  out.dataset.copy = '';
+  const R = () => { try { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] / 4294967296; } catch (e) { return Math.random(); } };
+  const show = txt => { out.textContent = txt; out.dataset.copy = txt.replace(/\n/g, ' · '); vib(); };
+  const btn = (label, fn, span) => h('button', { type: 'button', class: 'btn alt', text: label, style: span ? 'grid-column:1/-1' : '', onclick: fn });
+  const quick = h('div', { class: 'fgrid' },
+    btn('🎲 Würfel', () => show(String(randInt(1, 6, R)))),
+    btn('🎲🎲 Zwei Würfel', () => { const a = randInt(1, 6, R), b = randInt(1, 6, R); show(a + ' + ' + b + ' = ' + (a + b)); }),
+    btn('🎯 W20', () => show(String(randInt(1, 20, R)))),
+    btn('🪙 Münze', () => show(R() < 0.5 ? 'Kopf' : 'Zahl')),
+    btn('🎰 Lotto 6 aus 49', () => { const d = lottoDraw(R); show(d.numbers.join(' – ') + '\nSuperzahl ' + d.super); }, true));
+  const lo = h('input', { class: 'inp', inputmode: 'numeric', value: '1', autocomplete: 'off', 'aria-label': 'Von' });
+  const hi = h('input', { class: 'inp', inputmode: 'numeric', value: '100', autocomplete: 'off', 'aria-label': 'Bis' });
+  const range = h('div', { class: 'card' }, h('h2', { text: 'Zufallszahl von … bis …' }), h('div', { class: 'fgrid' }, lo, hi),
+    h('button', { type: 'button', class: 'btn', style: 'width:100%;margin-top:10px', text: 'Zahl ziehen', onclick: () => {
+      const a = parseDe(lo.value), b = parseDe(hi.value);
+      if (isNaN(a) || isNaN(b)) { toast('Bitte zwei Zahlen eingeben'); return; }
+      try { show(String(randInt(Math.round(a), Math.round(b), R))); } catch (e) { toast(e.message); }
+    } }));
+  const opts = h('input', { class: 'inp', placeholder: 'Pizza, Burger, Salat', autocomplete: 'off', 'aria-label': 'Optionen' });
+  const decide = h('div', { class: 'card' }, h('h2', { text: 'Entscheider (Optionen mit Komma trennen)' }), opts,
+    h('button', { type: 'button', class: 'btn', style: 'width:100%;margin-top:10px', text: 'Entscheiden', onclick: () => {
+      const list = opts.value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+      if (list.length < 2) { toast('Mindestens zwei Optionen eingeben'); return; }
+      show(list[randInt(0, list.length - 1, R)]);
+    } }));
+  root.append(h('div', { class: 'card' }, out, h('div', { class: 'hint', style: 'text-align:center', text: 'Tippe auf das Ergebnis zum Kopieren' }), quick), range, decide);
+})();
+
+/* ===== Einkaufsliste ===== */
+(function buildList() {
+  const root = $('#tab-list');
+  const inp = h('input', { class: 'inp', placeholder: 'Neuer Eintrag …', autocomplete: 'off', enterkeyhint: 'done', 'aria-label': 'Neuer Eintrag' });
+  const listEl = h('div'), info = h('div', { class: 'hint' });
+  function add() { const t = inp.value.trim(); if (!t) return; S.list.push({ t: t.slice(0, 200), d: false }); inp.value = ''; save(); render(); inp.focus(); }
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+  function render() {
+    listEl.textContent = '';
+    if (!S.list.length) listEl.append(h('div', { class: 'empty', text: 'Die Liste ist leer.' }));
+    S.list.forEach((it, i) => {
+      const tog = () => { it.d = !it.d; save(); render(); };
+      listEl.append(h('div', { class: 'li' + (it.d ? ' done' : '') },
+        h('span', { class: 'box', text: it.d ? '✓' : '', onclick: tog }), h('span', { class: 't', text: it.t, onclick: tog }),
+        h('button', { type: 'button', class: 'hbtn', text: '✕', 'aria-label': 'Eintrag löschen', onclick: () => { S.list.splice(i, 1); save(); render(); } })));
+    });
+    const done = S.list.filter(x => x.d).length;
+    info.textContent = S.list.length ? done + ' von ' + S.list.length + ' erledigt' : '';
+  }
+  root.append(h('div', { class: 'row-flex', style: 'margin-bottom:10px' }, inp, h('button', { type: 'button', class: 'btn', style: 'flex:0 0 auto;min-width:92px', text: 'Hinzu', onclick: add })), listEl, info,
+    h('div', { class: 'grid2', style: 'margin-top:8px' },
+      h('button', { type: 'button', class: 'btn alt sm', text: 'Erledigte entfernen', onclick: () => { S.list = S.list.filter(x => !x.d); save(); render(); } }),
+      h('button', { type: 'button', class: 'btn danger sm', text: 'Alles löschen', onclick: () => { if (S.list.length && confirm('Die ganze Liste löschen?')) { S.list = []; save(); render(); } } })));
+  render();
+})();
+
+/* ===== Notizzettel ===== */
+(function buildNotes() {
+  const root = $('#tab-notes');
+  const ta = h('textarea', { class: 'inp', placeholder: 'Notizen werden automatisch gespeichert …', 'aria-label': 'Notizen' });
+  ta.value = S.notes;
+  const info = h('div', { class: 'hint' });
+  const upd = () => { info.textContent = ta.value.length ? ta.value.length + ' Zeichen' : ''; };
+  let tm = null;
+  ta.addEventListener('input', () => { upd(); clearTimeout(tm); tm = setTimeout(() => { S.notes = ta.value; save(); }, 300); });
+  window.addEventListener('pagehide', () => { S.notes = ta.value; save(); });
+  upd();
+  root.append(ta, info, h('div', { class: 'grid2', style: 'margin-top:8px' },
+    h('button', { type: 'button', class: 'btn alt sm', text: 'Kopieren', onclick: () => { if (ta.value) copyText(ta.value); } }),
+    h('button', { type: 'button', class: 'btn danger sm', text: 'Löschen', onclick: () => { if (ta.value && confirm('Notizzettel wirklich leeren?')) { ta.value = ''; S.notes = ''; save(); upd(); } } })));
+})();
+
+/* ===== Timer & Stoppuhr ===== */
+let actx = null;
+function unlockAudio() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) { } }
+function beep(n) {
+  if (!actx) return;
+  try {
+    for (let i = 0; i < (n || 5); i++) {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = 880; g.gain.value = 0.25; o.connect(g); g.connect(actx.destination);
+      const t0 = actx.currentTime + i * 0.35; o.start(t0); o.stop(t0 + 0.18);
+    }
+  } catch (e) { }
+}
+let tickId = null, tickFn = null;
+function ensureTick() {
+  if (tickId) return;
+  tickId = setInterval(() => { if (tickFn) tickFn(); }, 100);
+}
+(function buildTimer() {
+  const root = $('#tab-timer');
+  const TM = S.timer;
+  if (TM.end && Date.now() >= TM.end) { TM.end = null; TM.left = 0; TM.done = true; save(); }
+  const seg = h('div', { class: 'seg' }), tBox = h('div'), sBox = h('div', { class: 'hidden' });
+  ['Timer', 'Stoppuhr'].forEach((l, i) => seg.append(h('button', { type: 'button', class: i === 0 ? 'on' : '', text: l, onclick: () => {
+    Array.from(seg.children).forEach((b, j) => b.classList.toggle('on', j === i));
+    tBox.classList.toggle('hidden', i !== 0); sBox.classList.toggle('hidden', i !== 1);
+  } })));
+  root.append(seg, tBox, sBox);
+
+  const disp = h('div', { class: 'tdisp', text: '00:00' });
+  const chips = h('div', { class: 'chips' });
+  [1, 3, 5, 10, 15, 30].forEach(m => chips.append(h('button', { type: 'button', class: 'chip', text: m + ' Min', onclick: () => setDur(m * 60000) })));
+  const custom = h('input', { class: 'inp', inputmode: 'decimal', placeholder: 'Eigene Minuten, z. B. 12,5', autocomplete: 'off', 'aria-label': 'Eigene Minuten' });
+  const bStart = h('button', { type: 'button', class: 'btn', text: 'Start' });
+  const bReset = h('button', { type: 'button', class: 'btn alt', text: 'Zurücksetzen' });
+  tBox.append(h('div', { class: 'card' }, disp, chips, custom, h('div', { class: 'btnrow' }, bStart, bReset),
+    h('p', { class: 'hint', text: 'Der Alarm ertönt nur, solange die App geöffnet ist (Ton + Vibration).' })));
+  const fmtT = ms => { const s = Math.ceil(ms / 1000), hh = Math.floor(s / 3600), mm = Math.floor(s % 3600 / 60), ss = s % 60; return (hh ? hh + ':' + pad2(mm) : pad2(mm)) + ':' + pad2(ss); };
+  const remaining = () => TM.end ? Math.max(0, TM.end - Date.now()) : TM.left;
+  function paintT() {
+    disp.textContent = TM.done ? '⏰ 00:00' : fmtT(remaining());
+    disp.classList.toggle('done', !!TM.done);
+    bStart.textContent = TM.end ? 'Pause' : (!TM.done && TM.left > 0 && TM.left < TM.total ? 'Weiter' : 'Start');
+  }
+  function setDur(ms) { TM.total = TM.left = ms; TM.end = null; TM.done = false; save(); paintT(); }
+  bStart.onclick = () => {
+    unlockAudio(); vib();
+    if (TM.end) { TM.left = Math.max(0, TM.end - Date.now()); TM.end = null; }
+    else {
+      if (TM.done) { TM.left = TM.total; TM.done = false; }
+      if (TM.left <= 0) { toast('Erst eine Dauer wählen'); return; }
+      TM.end = Date.now() + TM.left;
+    }
+    save(); paintT(); ensureTick();
+  };
+  bReset.onclick = () => { TM.left = TM.total; TM.end = null; TM.done = false; save(); paintT(); };
+  custom.addEventListener('input', () => { const v = parseDe(custom.value); if (v > 0 && v < 6000) setDur(Math.round(v * 60000)); });
+  function alarm() {
+    beep(6);
+    if (S.settings.vib && navigator.vibrate) { try { navigator.vibrate([400, 200, 400, 200, 800]); } catch (e) { } }
+    toast('⏰ Timer abgelaufen!', 6000);
+  }
+  function tickTimer() {
+    if (TM.end && Date.now() >= TM.end) { TM.end = null; TM.left = 0; TM.done = true; save(); alarm(); }
+    paintT();
+  }
+
+  const SW = { start: null, acc: 0, laps: [] };
+  const sDisp = h('div', { class: 'tdisp', text: '00:00,00' });
+  const sA = h('button', { type: 'button', class: 'btn', text: 'Start' }), sB = h('button', { type: 'button', class: 'btn alt', text: 'Zurücksetzen' });
+  const lapsEl = h('div');
+  sBox.append(h('div', { class: 'card' }, sDisp, h('div', { class: 'btnrow' }, sA, sB)), h('div', { class: 'card' }, lapsEl));
+  const swNow = () => SW.acc + (SW.start ? Date.now() - SW.start : 0);
+  const fmtS = ms => { const c = Math.floor(ms / 10) % 100, s = Math.floor(ms / 1000) % 60, m = Math.floor(ms / 60000); return (m >= 60 ? Math.floor(m / 60) + ':' + pad2(m % 60) : pad2(m)) + ':' + pad2(s) + ',' + pad2(c); };
+  function paintS() { sDisp.textContent = fmtS(swNow()); sA.textContent = SW.start ? 'Stopp' : 'Start'; sB.textContent = SW.start ? 'Runde' : 'Zurücksetzen'; }
+  function renderLaps() {
+    lapsEl.textContent = '';
+    if (!SW.laps.length) { lapsEl.append(h('div', { class: 'hint', text: 'Rundenzeiten erscheinen hier.' })); return; }
+    SW.laps.forEach((l, i) => lapsEl.append(h('div', { class: 'lap' }, h('span', { text: 'Runde ' + (SW.laps.length - i) }), h('span', { text: fmtS(l.d) }), h('span', { text: fmtS(l.t), style: 'color:var(--muted)' }))));
+  }
+  sA.onclick = () => { vib(); if (SW.start) { SW.acc += Date.now() - SW.start; SW.start = null; } else { SW.start = Date.now(); ensureTick(); } paintS(); };
+  sB.onclick = () => {
+    vib();
+    if (SW.start) { const t = swNow(), prev = SW.laps.length ? SW.laps[0].t : 0; SW.laps.unshift({ t: t, d: t - prev }); }
+    else { SW.acc = 0; SW.laps = []; }
+    paintS(); renderLaps();
+  };
+  tickFn = () => {
+    tickTimer(); if (SW.start) paintS();
+    if (!TM.end && !SW.start) { clearInterval(tickId); tickId = null; }
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tickTimer(); });
+  paintT(); paintS(); renderLaps();
+  if (TM.end) ensureTick();
+})();
+
+/* ===== Einstellungen ===== */
+function applyTheme() {
+  const th = S.settings.theme, root = document.documentElement;
+  if (th === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', th);
+  const dark = th === 'dark' || (th === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dark ? '#0d1117' : '#0f766e');
+  $('#s-theme').value = th;
+}
+$('#btnTheme').addEventListener('click', () => {
+  const order = ['auto', 'light', 'dark'], names = { auto: 'Design: automatisch', light: 'Design: hell', dark: 'Design: dunkel' };
+  S.settings.theme = order[(order.indexOf(S.settings.theme) + 1) % 3]; save(); applyTheme(); toast(names[S.settings.theme]);
+});
+$('#btnSettings').addEventListener('click', () => {
+  $('#s-vib').checked = !!S.settings.vib; $('#s-dec').value = S.settings.dec; $('#s-tax').value = String(S.settings.tax).replace('.', ','); $('#s-ang').value = S.settings.angle; $('#s-theme').value = S.settings.theme;
+  $('#dlg').showModal();
+});
+$('#s-close').addEventListener('click', () => $('#dlg').close());
+$('#s-theme').addEventListener('change', e => { S.settings.theme = e.target.value; save(); applyTheme(); });
+$('#s-vib').addEventListener('change', e => { S.settings.vib = e.target.checked; save(); if (e.target.checked) vib(); });
+$('#s-dec').addEventListener('change', e => { let v = parseInt(e.target.value, 10); if (isNaN(v)) v = 8; v = Math.max(0, Math.min(8, v)); e.target.value = v; S.settings.dec = v; save(); classic.render(); sci.render(); });
+$('#s-tax').addEventListener('change', e => { const v = parseDe(e.target.value); if (!isNaN(v) && v >= 0 && v < 100) { S.settings.tax = v; P.rate = v; save(); priceChips(); priceRender(false); } else e.target.value = String(S.settings.tax).replace('.', ','); });
+$('#s-ang').addEventListener('change', e => { S.settings.angle = e.target.value; save(); updateAngleLabel(); sci.render(); });
+$('#s-reset').addEventListener('click', () => {
+  if (confirm('Wirklich alle gespeicherten Daten (Verlauf, Kurse, Einstellungen) löschen?')) {
+    try { localStorage.removeItem(STORE_KEY); } catch (e) { }
+    location.reload();
+  }
+});
+
+applyTheme(); updateAngleLabel(); classic.render(); sci.render(); renderTabbar();
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').catch(() => { });
+}
+</script>
+</body>
+</html>
